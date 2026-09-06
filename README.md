@@ -20,7 +20,7 @@ Shulk is built from the ground up for a controller. It uses Prism Launcher's eng
 
 - **Built for controllers**: Full gamepad navigation from start to finish. Move with your D-pad or sticks, jump between main menus with LB/RB, flip modpack sources with LT/RT, and press Y anywhere to bring up the on-screen keyboard. Supports Xbox, Steam Deck, PlayStation, and Switch button glyphs.
 - **Search and download modpacks**: Browse Modrinth, CurseForge, FTB, Technic, and ATLauncher directly from your couch. You can view mod lists, read descriptions, check screenshots, and install packs in one click.
-- **Classic Minecraft vibe**: 3D rotating panoramic backgrounds from official update screens (with a random shuffle on startup), authentic UI sound effects, and clean Minecraft fonts.
+- **"Official" Minecraft feel**: 3D rotating panoramic backgrounds from official update screens (with a random shuffle on startup), authentic UI sound effects, and clean Minecraft fonts.
 - **Made for handheld screens**: Sized and spaced for 7" to 8" displays at 800p and 1080p so you don't have to squint.
 - **Battery conscious**: Pauses background 3D shaders and dials back controller polling whenever you minimize or launch into the game so it doesn't waste your battery.
 - **Standard Java Edition**: Signs in with your Microsoft account via device code, supports Fabric, Forge, NeoForge, and Quilt, and works with all Minecraft versions.
