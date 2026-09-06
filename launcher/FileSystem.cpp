@@ -58,7 +58,9 @@
 #include "StringUtils.h"
 
 #if defined Q_OS_WIN32
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #define WIN32_LEAN_AND_MEAN
 #include <objidl.h>
 #include <shlguid.h>
@@ -69,7 +71,7 @@
 #include <winnls.h>
 #include <string>
 // for ShellExecute
-#include <Shellapi.h>
+#include <shellapi.h>
 #include <objbase.h>
 #include <shlobj.h>
 #else
