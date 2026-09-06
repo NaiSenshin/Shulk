@@ -1,0 +1,24 @@
+<RCC>
+    <qresource prefix="/shulk/panoramas">
+        <file alias="classic_cube.png">panorama_classic_cube.png</file>
+        <file alias="classic_preview.png">panorama_classic_preview.png</file>
+        <file alias="aquatic_cube.png">panorama_aquatic_cube.png</file>
+        <file alias="aquatic_preview.png">panorama_aquatic_preview.png</file>
+        <file alias="village_cube.png">panorama_village_cube.png</file>
+        <file alias="village_preview.png">panorama_village_preview.png</file>
+        <file alias="buzzy_bees_cube.png">panorama_buzzy_bees_cube.png</file>
+        <file alias="buzzy_bees_preview.png">panorama_buzzy_bees_preview.png</file>
+        <file alias="nether_cube.png">panorama_nether_cube.png</file>
+        <file alias="nether_preview.png">panorama_nether_preview.png</file>
+        <file alias="caves_cliffs_1_cube.png">panorama_caves_cliffs_1_cube.png</file>
+        <file alias="caves_cliffs_1_preview.png">panorama_caves_cliffs_1_preview.png</file>
+        <file alias="caves_cliffs_2_cube.png">panorama_caves_cliffs_2_cube.png</file>
+        <file alias="caves_cliffs_2_preview.png">panorama_caves_cliffs_2_preview.png</file>
+        <file alias="the_wild_cube.png">panorama_the_wild_cube.png</file>
+        <file alias="the_wild_preview.png">panorama_the_wild_preview.png</file>
+        <file alias="trails_tales_cube.png">panorama_trails_tales_cube.png</file>
+        <file alias="trails_tales_preview.png">panorama_trails_tales_preview.png</file>
+        <file alias="tricky_trials_cube.png">panorama_tricky_trials_cube.png</file>
+        <file alias="tricky_trials_preview.png">panorama_tricky_trials_preview.png</file>
+    </qresource>
+</RCC>
