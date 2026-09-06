@@ -42,6 +42,7 @@
 #include <utility>
 
 #include "Commandline.h"
+#include "FileSystem.h"
 #include "java/JavaUtils.h"
 
 JavaChecker::JavaChecker(QString path, QString args, int minMem, int maxMem, int permGen, int id)
