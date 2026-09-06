@@ -20,11 +20,11 @@ Playing Java Edition Minecraft on a portable handheld like the Steam Deck or ROG
 
 ## What makes it special?
 
-* 🎮 **Pick up and play**: Full 2D gamepad navigation out of the box. Use your analog stick or D-pad to move around, bump through main menus with `LB` / `RB`, cycle through sub-tabs with `LT` / `RT`, and pop up the virtual keyboard automatically whenever you need to search. Supports Xbox, Steam Deck, PlayStation, and Switch button layouts.
-* 📦 **Modpacks from anywhere**: Browse and search Modrinth, CurseForge, Feed The Beast, Technic, and ATLauncher directly from the couch. View included mods, inspect screenshot galleries, and install in a single click.
-* 🌄 **That classic Minecraft feel**: Features real 3D rotating panoramic skyboxes from Mojang's iconic title screens (with random shuffle on launch!), official click and chest sounds, and crisp Minecraft typography.
-* 🔋 **Handheld & battery friendly**: Large, legible fonts and buttons designed for 7" to 8" screens (800p / 1080p). It also automatically pauses 3D shaders and slows polling when you're tabbed out or in-game so your battery lasts longer.
-* ☕ **Full Java Edition power**: Seamless Microsoft device-code login, instant loader setup (Fabric, NeoForge, Forge, Quilt), and support for every release from early Alpha to the latest snapshots.
+* **Pick up and play**: Full 2D gamepad navigation out of the box. Use your analog stick or D-pad to move around, bump through main menus with `LB` / `RB`, cycle through sub-tabs with `LT` / `RT`, and pop up the virtual keyboard automatically whenever you need to search. Supports Xbox, Steam Deck, PlayStation, and Switch button layouts.
+* **Modpacks from anywhere**: Browse and search Modrinth, CurseForge, Feed The Beast, Technic, and ATLauncher directly from the couch. View included mods, inspect screenshot galleries, and install in a single click.
+* **That classic Minecraft feel**: Features real 3D rotating panoramic skyboxes from Mojang's iconic title screens (with random shuffle on launch!), official click and chest sounds, and crisp Minecraft typography.
+* **Handheld & battery friendly**: Large, legible fonts and buttons designed for 7" to 8" screens (800p / 1080p). It also automatically pauses 3D shaders and slows polling when you're tabbed out or in-game so your battery lasts longer.
+* **Full Java Edition power**: Seamless Microsoft device-code login, instant loader setup (Fabric, NeoForge, Forge, Quilt), and support for every release from early Alpha to the latest snapshots.
 
 ---
 
