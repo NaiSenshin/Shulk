@@ -6,7 +6,6 @@ import "theme"
 import "components"
 import "views"
 import "dialogs"
-import Qt5Compat.GraphicalEffects
 
 ApplicationWindow {
     id: appWindow
@@ -166,11 +165,6 @@ ApplicationWindow {
                 }
             }
 
-            // Subtle depth-of-field ambient blur to make foreground UI pop
-            layer.enabled: true
-            layer.effect: FastBlur {
-                radius: shulkTheme.panoramaBlurRadius
-            }
         }
 
         // Ambient Atmospheric Vignette & Contrast

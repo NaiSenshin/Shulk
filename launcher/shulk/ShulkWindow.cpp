@@ -89,6 +89,8 @@ bool ShulkWindow::initialize()
         m_engine->addImportPath(devQmlPath);
         m_engine->load(QUrl::fromLocalFile(devQmlPath + "/main.qml"));
     } else {
+        QString appDir = QCoreApplication::applicationDirPath();
+        m_engine->addImportPath(appDir + "/qml");
         m_engine->addImportPath("qrc:/shulk/qml");
         m_engine->load(QUrl(QStringLiteral("qrc:/shulk/qml/main.qml")));
     }
