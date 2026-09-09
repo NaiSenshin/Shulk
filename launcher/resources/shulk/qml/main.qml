@@ -28,6 +28,15 @@ ApplicationWindow {
     property string pendingDeleteId: ""
     property int pendingDeleteIndex: -1
     property string pendingDeleteName: ""
+    property bool inTopBar: false
+
+    function requestExitLauncher() {
+        appWindow.pendingDeleteType = "exit"
+        confirmDialog.dialogTitle = qsTr("Quit Shulk")
+        confirmDialog.message = qsTr("Are you sure you want to exit Shulk?")
+        confirmDialog.confirmText = qsTr("Quit")
+        confirmDialog.open()
+    }
 
     // Central Controller & Action Router
     Connections {
@@ -79,13 +88,21 @@ ApplicationWindow {
                 if (discoverView.inPackDetail) {
                     discoverView.activeModpackDetail = null
                 }
+                appWindow.inTopBar = false
                 navBar.selectPrevious()
                 return
             } else if (action === Theme.actionNextTab) {
                 if (discoverView.inPackDetail) {
                     discoverView.activeModpackDetail = null
                 }
+                appWindow.inTopBar = false
                 navBar.selectNext()
+                return
+            }
+
+            // Top Navigation Bar focus handling
+            if (appWindow.inTopBar) {
+                navBar.handleAction(action)
                 return
             }
 
@@ -229,12 +246,18 @@ ApplicationWindow {
             id: navBar
             Layout.fillWidth: true
             currentIndex: appWindow.activeNavTab
+            isFocused: appWindow.inTopBar
+            onReturnFocusRequested: {
+                appWindow.inTopBar = false
+            }
             onTabSelected: (index) => {
+                appWindow.inTopBar = false
                 appWindow.activeDetailProfile = null
                 discoverView.activeModpackDetail = null
                 appWindow.activeNavTab = index
             }
             onAccountPillClicked: {
+                appWindow.inTopBar = false
                 if (shulkAccounts.hasActiveAccount) {
                     appWindow.activeDetailProfile = null
                     discoverView.activeModpackDetail = null
@@ -243,6 +266,10 @@ ApplicationWindow {
                 } else {
                     addAccountDialog.open()
                 }
+            }
+            onExitRequested: {
+                appWindow.inTopBar = false
+                requestExitLauncher()
             }
         }
 
@@ -279,6 +306,14 @@ ApplicationWindow {
                         appWindow.activeDetailProfile = null
                         appWindow.activeNavTab = 2
                     }
+                    onEnterTopBarRequested: {
+                        appWindow.inTopBar = true
+                        navBar.isFocused = true
+                        navBar.focusIndex = 1
+                    }
+                    onExitLauncherRequested: {
+                        requestExitLauncher()
+                    }
                 }
 
                 LibraryView {
@@ -295,6 +330,11 @@ ApplicationWindow {
                     onOpenOptionsRequested: (profile) => {
                         optionsDialog.profile = profile
                         optionsDialog.open()
+                    }
+                    onEnterTopBarRequested: {
+                        appWindow.inTopBar = true
+                        navBar.isFocused = true
+                        navBar.focusIndex = 1
                     }
                 }
 
@@ -374,8 +414,9 @@ ApplicationWindow {
         // BOTTOM CONTROLLER BUTTON HINTS BAR
         ShulkButtonHints {
             Layout.fillWidth: true
-            showBack: appWindow.inDetailView || (appWindow.activeNavTab === 2 && discoverView.inPackDetail) || (appWindow.activeNavTab === 3 && settingsView.focusPane === 1)
+            showBack: appWindow.inDetailView || (appWindow.activeNavTab === 0 && !appWindow.inTopBar) || (appWindow.activeNavTab === 2 && discoverView.inPackDetail) || (appWindow.activeNavTab === 3 && settingsView.focusPane === 1) || appWindow.inTopBar
             primaryHintText: {
+                if (appWindow.inTopBar) return navBar.focusIndex === 1 ? qsTr("Quit Shulk") : qsTr("Account")
                 if (detailView.contentBrowserOpen) return qsTr("Add Selected")
                 if (appWindow.activeNavTab === 2 && discoverView.inPackDetail) return qsTr("Install Modpack")
                 if (appWindow.inDetailView) return (detailView.activeTab >= 1 && detailView.activeTab <= 4) ? qsTr("Browse / Add") : qsTr("Select / Play")
@@ -384,6 +425,8 @@ ApplicationWindow {
                 return qsTr("Select")
             }
             secondaryHintText: {
+                if (appWindow.inTopBar) return qsTr("Back")
+                if (appWindow.activeNavTab === 0 && !appWindow.inDetailView) return qsTr("Quit")
                 if (detailView.contentBrowserOpen) return qsTr("Back to Profile")
                 if (appWindow.activeNavTab === 2 && discoverView.inPackDetail) return qsTr("Back to Discover")
                 if (appWindow.inDetailView) return qsTr("Back to Library")
@@ -455,6 +498,8 @@ ApplicationWindow {
                 if (detailView) {
                     detailView.deleteWorld(appWindow.pendingDeleteIndex)
                 }
+            } else if (appWindow.pendingDeleteType === "exit") {
+                shulkLauncher.exitApplication()
             }
             appWindow.pendingDeleteType = ""
             appWindow.pendingDeleteIndex = -1

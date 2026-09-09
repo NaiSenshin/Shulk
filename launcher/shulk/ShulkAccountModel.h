@@ -22,6 +22,9 @@ class ShulkAccountModel : public QAbstractListModel {
     Q_PROPERTY(QString activeAccountName READ activeAccountName NOTIFY activeAccountChanged)
     Q_PROPERTY(QString activeAccountType READ activeAccountType NOTIFY activeAccountChanged)
     Q_PROPERTY(bool hasActiveAccount READ hasActiveAccount NOTIFY activeAccountChanged)
+    Q_PROPERTY(QString activeAccountSkinUrl READ activeAccountSkinUrl NOTIFY activeAccountChanged)
+    Q_PROPERTY(QString activeAccountSkinVariant READ activeAccountSkinVariant NOTIFY activeAccountChanged)
+    Q_PROPERTY(QString activeAccountUuid READ activeAccountUuid NOTIFY activeAccountChanged)
 
     // Microsoft Login State
     Q_PROPERTY(bool isLoggingIn READ isLoggingIn NOTIFY loginStateChanged)
@@ -37,7 +40,10 @@ public:
         UsernameRole,
         TypeRole,
         IsActiveRole,
-        OwnsGameRole
+        OwnsGameRole,
+        SkinUrlRole,
+        SkinVariantRole,
+        UuidRole
     };
     Q_ENUM(Roles)
 
@@ -52,6 +58,9 @@ public:
     QString activeAccountName() const;
     QString activeAccountType() const;
     bool hasActiveAccount() const;
+    QString activeAccountSkinUrl() const;
+    QString activeAccountSkinVariant() const;
+    QString activeAccountUuid() const;
 
     bool isLoggingIn() const { return m_isLoggingIn; }
     QString loginCode() const { return m_loginCode; }
@@ -61,6 +70,7 @@ public:
     bool loginSuccess() const { return m_loginSuccess; }
 
     Q_INVOKABLE QVariantMap get(int index) const;
+    Q_INVOKABLE QVariantMap getSkinDetails(int index) const;
     Q_INVOKABLE void setDefaultAccount(int index);
     Q_INVOKABLE void addOfflineAccount(const QString& username);
     Q_INVOKABLE void removeAccount(int index);

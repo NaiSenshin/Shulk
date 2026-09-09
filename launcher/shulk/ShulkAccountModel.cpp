@@ -52,6 +52,9 @@ QHash<int, QByteArray> ShulkAccountModel::roleNames() const
     roles[TypeRole] = "type";
     roles[IsActiveRole] = "isActive";
     roles[OwnsGameRole] = "ownsGame";
+    roles[SkinUrlRole] = "skinUrl";
+    roles[SkinVariantRole] = "skinVariant";
+    roles[UuidRole] = "uuid";
     return roles;
 }
 
@@ -82,6 +85,24 @@ QVariant ShulkAccountModel::data(const QModelIndex& index, int role) const
             return isActive;
         case OwnsGameRole:
             return account->ownsMinecraft();
+        case SkinUrlRole: {
+            QString skinUrl = account->accountData()->minecraftProfile.skin.url;
+            if (skinUrl.isEmpty() && !account->profileName().isEmpty()) {
+                skinUrl = QString("https://mc-heads.net/skin/%1").arg(account->profileName());
+            }
+            return skinUrl;
+        }
+        case SkinVariantRole: {
+            QString v = account->accountData()->minecraftProfile.skin.variant;
+            return v.isEmpty() ? "classic" : v;
+        }
+        case UuidRole: {
+            QString uid = account->profileId();
+            if (uid.isEmpty() && !account->profileName().isEmpty()) {
+                uid = MinecraftAccount::uuidFromUsername(account->profileName()).toString(QUuid::Id128);
+            }
+            return uid;
+        }
         case Qt::DisplayRole:
             return account->profileName();
         default:
@@ -113,6 +134,76 @@ bool ShulkAccountModel::hasActiveAccount() const
     if (!list)
         return false;
     return list->defaultAccount() != nullptr;
+}
+
+QString ShulkAccountModel::activeAccountSkinUrl() const
+{
+    auto list = accountList();
+    if (!list) return QString();
+    auto def = list->defaultAccount();
+    if (!def) return QString();
+    QString url = def->accountData()->minecraftProfile.skin.url;
+    if (url.isEmpty() && !def->profileName().isEmpty()) {
+        url = QString("https://mc-heads.net/skin/%1").arg(def->profileName());
+    }
+    return url;
+}
+
+QString ShulkAccountModel::activeAccountSkinVariant() const
+{
+    auto list = accountList();
+    if (!list) return QString("classic");
+    auto def = list->defaultAccount();
+    if (!def) return QString("classic");
+    QString v = def->accountData()->minecraftProfile.skin.variant;
+    return v.isEmpty() ? "classic" : v;
+}
+
+QString ShulkAccountModel::activeAccountUuid() const
+{
+    auto list = accountList();
+    if (!list) return QString();
+    auto def = list->defaultAccount();
+    if (!def) return QString();
+    QString uid = def->profileId();
+    if (uid.isEmpty() && !def->profileName().isEmpty()) {
+        uid = MinecraftAccount::uuidFromUsername(def->profileName()).toString(QUuid::Id128);
+    }
+    return uid;
+}
+
+QVariantMap ShulkAccountModel::getSkinDetails(int index) const
+{
+    QVariantMap map;
+    auto list = accountList();
+    if (!list || index < 0 || index >= list->count())
+        return map;
+
+    auto acc = list->at(index);
+    if (!acc)
+        return map;
+
+    QString username = acc->profileName().isEmpty() ? acc->displayName() : acc->profileName();
+    QString uuid = acc->profileId();
+    if (uuid.isEmpty() && !username.isEmpty()) {
+        uuid = MinecraftAccount::uuidFromUsername(username).toString(QUuid::Id128);
+    }
+    QString skinUrl = acc->accountData()->minecraftProfile.skin.url;
+    if (skinUrl.isEmpty() && !username.isEmpty()) {
+        skinUrl = QString("https://mc-heads.net/skin/%1").arg(username);
+    }
+    QString variant = acc->accountData()->minecraftProfile.skin.variant;
+    if (variant.isEmpty()) variant = "classic";
+
+    map["username"] = username;
+    map["uuid"] = uuid;
+    map["skinUrl"] = skinUrl;
+    map["skinVariant"] = variant;
+    map["type"] = acc->typeString();
+    map["ownsGame"] = acc->ownsMinecraft();
+    auto defAcc = list->defaultAccount();
+    map["isActive"] = (defAcc && defAcc->internalId() == acc->internalId());
+    return map;
 }
 
 QVariantMap ShulkAccountModel::get(int index) const

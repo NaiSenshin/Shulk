@@ -366,3 +366,14 @@ QString ShulkLauncherController::appVersion() const
 {
     return BuildConfig.printableVersionString();
 }
+
+void ShulkLauncherController::exitApplication()
+{
+    qDebug() << "Shulk: User requested application exit.";
+    if (APPLICATION) {
+        APPLICATION->closeCurrentWindow();
+        APPLICATION->exit(0);
+    } else {
+        QCoreApplication::exit(0);
+    }
+}

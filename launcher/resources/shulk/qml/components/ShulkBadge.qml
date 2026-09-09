@@ -17,13 +17,31 @@ Rectangle {
     border.color: isAccent ? "#47683D" : Theme.borderSubtle
     border.width: 1
 
-    Text {
-        id: badgeText
+    Item {
+        readonly property int badgeOffset: Theme.getShadowOffset(badgeText.font.pixelSize)
+        readonly property int baselineAdj: Math.max(1, Math.round(badgeText.font.pixelSize * 0.12))
         anchors.centerIn: parent
-        text: root.text
-        font.pixelSize: Theme.sizeSmall
-        font.family: Theme.fontFamily
-        font.weight: Font.DemiBold
-        color: isAccent ? "#9BD38B" : root.textColor
+        implicitWidth: badgeText.implicitWidth
+        implicitHeight: badgeText.implicitHeight
+
+        Text {
+            x: parent.badgeOffset
+            y: parent.badgeOffset + parent.baselineAdj
+            text: root.text
+            font.pixelSize: Theme.sizeSmall
+            font.family: Theme.fontFamily
+            font.weight: Font.DemiBold
+            color: Theme.getShadowColor(badgeText.color)
+        }
+
+        Text {
+            id: badgeText
+            y: parent.baselineAdj
+            text: root.text
+            font.pixelSize: Theme.sizeSmall
+            font.family: Theme.fontFamily
+            font.weight: Font.DemiBold
+            color: isAccent ? "#9BD38B" : root.textColor
+        }
     }
 }

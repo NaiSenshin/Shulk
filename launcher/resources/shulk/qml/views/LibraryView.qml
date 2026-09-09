@@ -13,6 +13,7 @@ FocusScope {
     signal createProfileRequested()
     signal openOptionsRequested(var profile)
     signal openSortRequested()
+    signal enterTopBarRequested()
 
     property string searchQuery: ""
     property string sortType: "recent"
@@ -250,7 +251,12 @@ FocusScope {
         // SECTION 1: TOP TOOLBAR NAVIGATION
         // -------------------------------------------------------------
         if (root.activeSection === 1) {
-            if (action === 2) { // ActionNavigateDown -> Return to Grid
+            if (action === 1) { // ActionNavigateUp -> Enter Top Bar
+                root.enterTopBarRequested()
+                searchInput.focus = false
+                if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+                return
+            } else if (action === 2) { // ActionNavigateDown -> Return to Grid
                 root.activeSection = 0
                 searchInput.focus = false
                 if (typeof shulkSound !== "undefined") shulkSound.playFocus()
