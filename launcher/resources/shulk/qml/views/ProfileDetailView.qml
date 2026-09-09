@@ -418,13 +418,11 @@ FocusScope {
 
                                         RowLayout {
                                             Layout.fillWidth: true
-                                            Text {
+                                            ShulkText {
                                                 text: qsTr("About this Profile")
-                                                font.family: Theme.fontFamily
                                                 font.pixelSize: Theme.sizeHeader
                                                 font.bold: true
                                                 color: Theme.textPrimary
-                                                style: Text.Outline; styleColor: "#3F3F3F"
                                             }
                                             Item { Layout.fillWidth: true }
                                             Text {
@@ -447,13 +445,11 @@ FocusScope {
                                 }
                             }
 
-                            Text {
+                            ShulkText {
                                 text: qsTr("Profile Specifications")
-                                font.family: Theme.fontFamily
                                 font.pixelSize: Theme.sizeHeader
                                 font.bold: true
                                 color: Theme.textPrimary
-                                style: Text.Outline; styleColor: "#3F3F3F"
                             }
 
                             Item {
@@ -573,14 +569,12 @@ FocusScope {
                                             Layout.fillWidth: true
                                             spacing: 2
 
-                                            Text {
+                                            ShulkText {
                                                 Layout.fillWidth: true
                                                 text: model.name
-                                                font.family: Theme.fontFamily
                                                 font.pixelSize: Theme.sizeBody
                                                 font.bold: true
                                                 color: model.enabled ? Theme.textPrimary : Theme.textMuted
-                                                style: Text.Outline; styleColor: "#3F3F3F"
                                                 elide: Text.ElideRight
                                             }
 
@@ -686,14 +680,12 @@ FocusScope {
                                             }
                                         }
 
-                                        Text {
+                                        ShulkText {
                                             Layout.fillWidth: true
                                             text: model.name
-                                            font.family: Theme.fontFamily
                                             font.pixelSize: Theme.sizeBody
                                             font.bold: true
                                             color: Theme.textPrimary
-                                            style: Text.Outline; styleColor: "#3F3F3F"
                                             elide: Text.ElideRight
                                         }
 
@@ -788,14 +780,12 @@ FocusScope {
                                             }
                                         }
 
-                                        Text {
+                                        ShulkText {
                                             Layout.fillWidth: true
                                             text: model.name
-                                            font.family: Theme.fontFamily
                                             font.pixelSize: Theme.sizeBody
                                             font.bold: true
                                             color: Theme.textPrimary
-                                            style: Text.Outline; styleColor: "#3F3F3F"
                                             elide: Text.ElideRight
                                         }
 
@@ -884,14 +874,12 @@ FocusScope {
                                             Layout.fillWidth: true
                                             spacing: 2
 
-                                            Text {
+                                            ShulkText {
                                                 Layout.fillWidth: true
                                                 text: model.name
-                                                font.family: Theme.fontFamily
                                                 font.pixelSize: Theme.sizeBody
                                                 font.bold: true
                                                 color: Theme.textPrimary
-                                                style: Text.Outline; styleColor: "#3F3F3F"
                                                 elide: Text.ElideRight
                                             }
 
@@ -947,13 +935,11 @@ FocusScope {
                             width: parent.width
                             spacing: Theme.space16
 
-                            Text {
+                            ShulkText {
                                 text: qsTr("Instance Performance & Java Settings")
-                                font.family: Theme.fontFamily
                                 font.pixelSize: Theme.sizeHeader
                                 font.bold: true
                                 color: Theme.textPrimary
-                                style: Text.Outline; styleColor: "#3F3F3F"
                             }
 
                             Item {

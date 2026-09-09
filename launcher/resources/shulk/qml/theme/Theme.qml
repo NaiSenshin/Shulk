@@ -31,6 +31,34 @@ QtObject {
     readonly property color mcRedstone: "#FF5555"
     readonly property color mcNetherite: "#2C2628"
     readonly property color mcTextShadow: "#2F2F2F"
+    readonly property color fontShadowColor: "#3F3F3F"
+    readonly property color fontShadowDark: "#3F3F3F"
+    readonly property int fontShadowStyle: Text.Outline
+    readonly property real fontShadowOffset: Math.max(1, Math.round(sizeBody / 8))
+
+    // Authentic Minecraft quarter-brightness shadow calculation:
+    // In Minecraft Java Edition: shadowColor = (color >> 2) & 0x3F3F3F (each RGB channel / 4)
+    function getShadowColor(fgColor) {
+        if (!fgColor) return "#3F3F3F"
+        var c = Qt.color(fgColor)
+        var lum = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b
+        // Too dark check (matches "Too dark." behavior in Minecraft): text that is nearly black shouldn't have a muddy shadow
+        if (lum < 0.10) {
+            return "transparent"
+        }
+        var r = Math.floor(c.r * 255 / 4) / 255
+        var g = Math.floor(c.g * 255 / 4) / 255
+        var b = Math.floor(c.b * 255 / 4) / 255
+        return Qt.rgba(r, g, b, c.a)
+    }
+
+    // Authentic Minecraft font shadow offset:
+    // In Minecraft: at standard 8px glyph height, shadow is 1px.
+    // Scales proportionally with font size (1:8 ratio).
+    function getShadowOffset(pixelSize) {
+        var size = (pixelSize && pixelSize > 0) ? pixelSize : sizeBody
+        return Math.max(1, Math.round(size / 8))
+    }
 
     // Accents
     readonly property color accentShulk: "#3C8527"

@@ -74,13 +74,30 @@ FocusScope {
                     Layout.fillWidth: true
                     height: titleText.implicitHeight
 
-                    Text {
-                        id: titleText
+                    Item {
                         anchors.fill: parent
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.sizeSubheading
-                        font.weight: Font.DemiBold
-                        color: Theme.textPrimary
+
+                        Text {
+                            x: Theme.getShadowOffset(Theme.sizeSubheading)
+                            y: Theme.getShadowOffset(Theme.sizeSubheading)
+                            width: titleText.width
+                            height: titleText.height
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeSubheading
+                            font.weight: Font.DemiBold
+                            color: Theme.getShadowColor(Theme.textPrimary)
+                            text: titleText.text
+                            elide: titleText.elide
+                        }
+
+                        Text {
+                            id: titleText
+                            anchors.fill: parent
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeSubheading
+                            font.weight: Font.DemiBold
+                            color: Theme.textPrimary
+                        }
                     }
                 }
 

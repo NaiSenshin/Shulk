@@ -70,6 +70,7 @@ public:
     Q_INVOKABLE void clearError();
     Q_INVOKABLE void copyToClipboard(const QString& text);
     Q_INVOKABLE void notifyGameWindowOpened();
+    Q_INVOKABLE void exitApplication();
 
     Q_INVOKABLE void showLegacyInstanceWindow(const QString& instanceId);
     Q_INVOKABLE void showGlobalSettings(const QString& category = QString());

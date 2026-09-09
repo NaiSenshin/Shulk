@@ -12,6 +12,7 @@
         <file>qml/components/ShulkDialog.qml</file>
         <file>qml/components/ShulkEmptyState.qml</file>
         <file>qml/components/ShulkLoadingState.qml</file>
+        <file>qml/components/ShulkText.qml</file>
         <file>qml/dialogs/ShulkConfirmDialog.qml</file>
         <file>qml/dialogs/ShulkErrorDialog.qml</file>
         <file>qml/dialogs/ShulkProfileOptionsDialog.qml</file>

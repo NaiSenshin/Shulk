@@ -80,31 +80,68 @@ FocusScope {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Text {
-                text: root.text
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.sizeBody
-                font.weight: Font.DemiBold
-                color: root.enabled ? Theme.textPrimary : Theme.textMuted
+            Item {
+                readonly property int btnOffset: Theme.getShadowOffset(btnText.font.pixelSize)
+                readonly property int baselineAdj: Math.max(1, Math.round(btnText.font.pixelSize * 0.12))
+                implicitWidth: btnText.implicitWidth
+                implicitHeight: btnText.implicitHeight
                 anchors.verticalCenter: parent.verticalCenter
+
+                Text {
+                    x: parent.btnOffset
+                    y: parent.btnOffset + parent.baselineAdj
+                    text: root.text
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.sizeBody
+                    font.weight: Font.DemiBold
+                    color: Theme.getShadowColor(btnText.color)
+                }
+
+                Text {
+                    id: btnText
+                    y: parent.baselineAdj
+                    text: root.text
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.sizeBody
+                    font.weight: Font.DemiBold
+                    color: root.enabled ? (root.highlighted ? "#FFFFAA" : Theme.textPrimary) : Theme.textMuted
+                }
             }
 
             Rectangle {
                 visible: root.shortcutHint !== ""
-                width: shortcutText.implicitWidth + Theme.space8
+                width: shortcutText.implicitWidth + Theme.space12
                 height: 20 * Theme.scale
                 radius: Theme.radiusSm
                 color: "#52000000"
                 anchors.verticalCenter: parent.verticalCenter
 
-                Text {
-                    id: shortcutText
+                Item {
+                    readonly property int scOffset: Theme.getShadowOffset(shortcutText.font.pixelSize)
+                    readonly property int scBaselineAdj: Math.max(1, Math.round(shortcutText.font.pixelSize * 0.12))
                     anchors.centerIn: parent
-                    text: root.shortcutHint
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.sizeSmall
-                    font.bold: true
-                    color: Theme.textPrimary
+                    implicitWidth: shortcutText.implicitWidth
+                    implicitHeight: shortcutText.implicitHeight
+
+                    Text {
+                        x: parent.scOffset
+                        y: parent.scOffset + parent.scBaselineAdj
+                        text: root.shortcutHint
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeSmall
+                        font.bold: true
+                        color: Theme.getShadowColor(shortcutText.color)
+                    }
+
+                    Text {
+                        id: shortcutText
+                        y: parent.scBaselineAdj
+                        text: root.shortcutHint
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeSmall
+                        font.bold: true
+                        color: Theme.textPrimary
+                    }
                 }
             }
         }

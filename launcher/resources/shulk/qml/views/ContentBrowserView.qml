@@ -133,14 +133,11 @@ FocusScope {
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 1
-                Text {
+                ShulkText {
                     text: qsTr("Add %1").arg(root.pluralName)
-                    font.family: Theme.fontFamily
                     font.pixelSize: Theme.sizeTitle
                     font.bold: true
                     color: Theme.textPrimary
-                    style: Text.Outline
-                    styleColor: "#3F3F3F"
                 }
                 Text {
                     text: qsTr("Compatible with Minecraft %1 | %2").arg(root.profile ? root.profile.minecraftVersion : "").arg(root.profile ? root.profile.loaderType : "")

@@ -113,14 +113,32 @@ FocusScope {
                 height: 24 * Theme.scale
                 radius: Theme.radiusSm
                 color: Theme.accentPlay
-                Text {
-                    id: runningLabel
+                Item {
+                    readonly property int runOffset: Theme.getShadowOffset(Theme.sizeSmall)
+                    readonly property int baselineAdj: Math.max(1, Math.round(Theme.sizeSmall * 0.12))
                     anchors.centerIn: parent
-                    text: qsTr("RUNNING")
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.sizeSmall
-                    font.bold: true
-                    color: Theme.textPrimary
+                    implicitWidth: runningLabel.implicitWidth
+                    implicitHeight: runningLabel.implicitHeight
+
+                    Text {
+                        x: parent.runOffset
+                        y: parent.runOffset + parent.baselineAdj
+                        text: qsTr("RUNNING")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeSmall
+                        font.bold: true
+                        color: Theme.getShadowColor(Theme.textPrimary)
+                    }
+
+                    Text {
+                        id: runningLabel
+                        y: parent.baselineAdj
+                        text: qsTr("RUNNING")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeSmall
+                        font.bold: true
+                        color: Theme.textPrimary
+                    }
                 }
             }
         }
@@ -136,14 +154,33 @@ FocusScope {
             anchors.topMargin: 116 * Theme.scale
             spacing: Theme.space8
 
-            Text {
+            Item {
                 Layout.fillWidth: true
-                text: root.cardTitle
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.sizeHeader + Math.round(1 * Theme.scale)
-                font.weight: Font.DemiBold
-                color: Theme.textPrimary
-                elide: Text.ElideRight
+                implicitHeight: cardTitleText.implicitHeight + Theme.getShadowOffset(Theme.sizeHeader + Math.round(1 * Theme.scale))
+
+                Text {
+                    x: Theme.getShadowOffset(Theme.sizeHeader + Math.round(1 * Theme.scale))
+                    y: Theme.getShadowOffset(Theme.sizeHeader + Math.round(1 * Theme.scale))
+                    width: cardTitleText.width
+                    height: cardTitleText.height
+                    text: root.cardTitle
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.sizeHeader + Math.round(1 * Theme.scale)
+                    font.weight: Font.DemiBold
+                    color: Theme.getShadowColor(Theme.textPrimary)
+                    elide: Text.ElideRight
+                }
+
+                Text {
+                    id: cardTitleText
+                    anchors.fill: parent
+                    text: root.cardTitle
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.sizeHeader + Math.round(1 * Theme.scale)
+                    font.weight: Font.DemiBold
+                    color: Theme.textPrimary
+                    elide: Text.ElideRight
+                }
             }
 
             Row {
@@ -153,15 +190,33 @@ FocusScope {
                 ShulkBadge { visible: root.modCount > 0; text: qsTr("%1 mods").arg(root.modCount) }
             }
 
-            Text {
+            Item {
                 Layout.fillWidth: true
-                text: root.playTime === qsTr("Never played") || root.playTime.length === 0
-                      ? qsTr("Not played yet")
-                      : qsTr("%1 played  /  Last played %2").arg(root.playTime).arg(root.lastPlayed)
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.sizeCaption
-                color: Theme.textMuted
-                elide: Text.ElideRight
+                implicitHeight: cardSubtitleText.implicitHeight + Theme.getShadowOffset(Theme.sizeCaption)
+
+                Text {
+                    x: Theme.getShadowOffset(Theme.sizeCaption)
+                    y: Theme.getShadowOffset(Theme.sizeCaption)
+                    width: cardSubtitleText.width
+                    height: cardSubtitleText.height
+                    text: cardSubtitleText.text
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.sizeCaption
+                    color: Theme.getShadowColor(Theme.textMuted)
+                    elide: Text.ElideRight
+                }
+
+                Text {
+                    id: cardSubtitleText
+                    anchors.fill: parent
+                    text: root.playTime === qsTr("Never played") || root.playTime.length === 0
+                          ? qsTr("Not played yet")
+                          : qsTr("%1 played  /  Last played %2").arg(root.playTime).arg(root.lastPlayed)
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.sizeCaption
+                    color: Theme.textMuted
+                    elide: Text.ElideRight
+                }
             }
 
             Item { Layout.fillHeight: true }
