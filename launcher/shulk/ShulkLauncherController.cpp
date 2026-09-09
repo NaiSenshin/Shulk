@@ -19,13 +19,24 @@
 #include "InstanceCopyPrefs.h"
 #include "HardwareInfo.h"
 #include "BuildConfig.h"
+#include "Version.h"
 #include <QClipboard>
 #include <QGuiApplication>
 #include <QTimer>
+#include <QSettings>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QNetworkAccessManager>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QDesktopServices>
+#include <QUrl>
 
 ShulkLauncherController::ShulkLauncherController(QObject* parent)
     : QObject(parent)
 {
+    loadUpdaterSettings();
     if (APPLICATION) {
         connect(APPLICATION, &Application::updateAllowedChanged, this, &ShulkLauncherController::updateRunningState);
     }
@@ -375,5 +386,171 @@ void ShulkLauncherController::exitApplication()
         APPLICATION->exit(0);
     } else {
         QCoreApplication::exit(0);
+    }
+}
+
+void ShulkLauncherController::loadUpdaterSettings()
+{
+    QSettings settings("PrismLauncher", "Shulk");
+    m_updateChannel = settings.value("Updater/Channel", "stable").toString();
+    m_devToken = settings.value("Updater/DevToken", "").toString();
+}
+
+void ShulkLauncherController::saveUpdaterSettings()
+{
+    QSettings settings("PrismLauncher", "Shulk");
+    settings.setValue("Updater/Channel", m_updateChannel);
+    settings.setValue("Updater/DevToken", m_devToken);
+}
+
+void ShulkLauncherController::setUpdateChannel(const QString& channel)
+{
+    if (m_updateChannel != channel) {
+        m_updateChannel = channel;
+        saveUpdaterSettings();
+        emit updateChannelChanged();
+        checkForUpdates(false);
+    }
+}
+
+void ShulkLauncherController::setDevToken(const QString& token)
+{
+    if (m_devToken != token) {
+        m_devToken = token;
+        saveUpdaterSettings();
+        emit devTokenChanged();
+    }
+}
+
+void ShulkLauncherController::checkForUpdates(bool userTriggered)
+{
+    if (m_isCheckingForUpdates)
+        return;
+
+    m_isCheckingForUpdates = true;
+    m_updateStatusMessage = tr("Checking for updates...");
+    emit updateStatusChanged();
+
+    QNetworkAccessManager* nam = APPLICATION ? APPLICATION->network() : nullptr;
+    if (!nam) {
+        m_isCheckingForUpdates = false;
+        m_updateStatusMessage = tr("Network manager unavailable.");
+        emit updateStatusChanged();
+        return;
+    }
+
+    QUrl url;
+    bool isDev = (m_updateChannel == "development");
+    if (isDev) {
+        url = QUrl("https://api.github.com/repos/NaiSenshin/Shulk-Dev/releases");
+    } else {
+        url = QUrl("https://api.github.com/repos/NaiSenshin/Shulk/releases/latest");
+    }
+
+    QNetworkRequest request(url);
+    request.setRawHeader("Accept", "application/vnd.github+json");
+    request.setRawHeader("User-Agent", "Shulk-Handheld-Launcher");
+    if (isDev && !m_devToken.trimmed().isEmpty()) {
+        request.setRawHeader("Authorization", QString("Bearer %1").arg(m_devToken.trimmed()).toUtf8());
+    }
+
+    QNetworkReply* reply = nam->get(request);
+    connect(reply, &QNetworkReply::finished, this, [this, reply, isDev, userTriggered]() {
+        reply->deleteLater();
+        m_isCheckingForUpdates = false;
+
+        if (reply->error() != QNetworkReply::NoError) {
+            int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            qWarning() << "Shulk: Update check failed:" << reply->errorString() << "status:" << statusCode;
+            if (statusCode == 404) {
+                m_updateStatusMessage = isDev ? tr("No releases found on Shulk-Dev.") : tr("No releases found.");
+            } else if (statusCode == 401 || statusCode == 403) {
+                m_updateStatusMessage = isDev ? tr("Dev repository authorization failed. Check token.") : tr("Rate limit exceeded.");
+            } else {
+                m_updateStatusMessage = tr("Update check failed: %1").arg(reply->errorString());
+            }
+            m_updateAvailable = false;
+            emit updateStatusChanged();
+            return;
+        }
+
+        QByteArray data = reply->readAll();
+        QJsonDocument doc = QJsonDocument::fromJson(data);
+
+        QJsonObject targetRelease;
+        if (isDev) {
+            // Shulk-Dev query returns an array of releases
+            QJsonArray releases = doc.array();
+            if (releases.isEmpty()) {
+                m_updateAvailable = false;
+                m_updateStatusMessage = tr("No development releases published.");
+                emit updateStatusChanged();
+                return;
+            }
+            targetRelease = releases.first().toObject();
+        } else {
+            // Stable query returns a single release object
+            targetRelease = doc.object();
+        }
+
+        QString tag = targetRelease.value("tag_name").toString().trimmed();
+        if (tag.startsWith("v", Qt::CaseInsensitive)) {
+            tag = tag.mid(1);
+        }
+
+        QString currentVerStr = BuildConfig.printableVersionString();
+        if (currentVerStr.startsWith("v", Qt::CaseInsensitive)) {
+            currentVerStr = currentVerStr.mid(1);
+        }
+        // Strip trailing -develop or suffixes for pure version comparison
+        QString cleanCurrentVer = currentVerStr.split('-').first().trimmed();
+        QString cleanRemoteVer = tag.split('-').first().trimmed();
+
+        Version currentVer(cleanCurrentVer);
+        Version remoteVer(cleanRemoteVer);
+
+        m_updateLatestVersion = tag;
+        m_updateReleaseNotes = targetRelease.value("body").toString();
+
+        // Match platform download asset
+        m_updateDownloadUrl = targetRelease.value("html_url").toString(); // fallback to release page
+        QJsonArray assets = targetRelease.value("assets").toArray();
+        for (const auto& assetVal : assets) {
+            QJsonObject asset = assetVal.toObject();
+            QString name = asset.value("name").toString();
+            QString urlStr = asset.value("browser_download_url").toString();
+
+#if defined(Q_OS_WIN)
+            if (name.contains("Windows", Qt::CaseInsensitive) && name.endsWith(".zip", Qt::CaseInsensitive)) {
+                m_updateDownloadUrl = urlStr;
+                break;
+            }
+#else
+            // Linux / Steam Deck: prefer Installer or standalone tar.gz
+            if (name.contains("Linux-Installer", Qt::CaseInsensitive) || name.contains("SteamOS", Qt::CaseInsensitive)) {
+                m_updateDownloadUrl = urlStr;
+                break;
+            } else if (name.contains("Linux", Qt::CaseInsensitive) && name.endsWith(".tar.gz", Qt::CaseInsensitive)) {
+                m_updateDownloadUrl = urlStr;
+            }
+#endif
+        }
+
+        if (remoteVer > currentVer) {
+            m_updateAvailable = true;
+            m_updateStatusMessage = tr("Update available: v%1").arg(tag);
+        } else {
+            m_updateAvailable = false;
+            m_updateStatusMessage = tr("Shulk is up to date (v%1)").arg(cleanCurrentVer);
+        }
+
+        emit updateStatusChanged();
+    });
+}
+
+void ShulkLauncherController::openUpdateDownload()
+{
+    if (!m_updateDownloadUrl.isEmpty()) {
+        QDesktopServices::openUrl(QUrl(m_updateDownloadUrl));
     }
 }

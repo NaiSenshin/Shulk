@@ -31,6 +31,14 @@ class ShulkLauncherController : public QObject {
     Q_PROPERTY(QString javaPath READ javaPath WRITE setJavaPath NOTIFY javaSettingsChanged)
     Q_PROPERTY(int systemRamMb READ systemRamMb CONSTANT)
     Q_PROPERTY(QString appVersion READ appVersion CONSTANT)
+    Q_PROPERTY(bool isCheckingForUpdates READ isCheckingForUpdates NOTIFY updateStatusChanged)
+    Q_PROPERTY(bool updateAvailable READ updateAvailable NOTIFY updateStatusChanged)
+    Q_PROPERTY(QString updateLatestVersion READ updateLatestVersion NOTIFY updateStatusChanged)
+    Q_PROPERTY(QString updateReleaseNotes READ updateReleaseNotes NOTIFY updateStatusChanged)
+    Q_PROPERTY(QString updateDownloadUrl READ updateDownloadUrl NOTIFY updateStatusChanged)
+    Q_PROPERTY(QString updateStatusMessage READ updateStatusMessage NOTIFY updateStatusChanged)
+    Q_PROPERTY(QString updateChannel READ updateChannel WRITE setUpdateChannel NOTIFY updateChannelChanged)
+    Q_PROPERTY(QString devToken READ devToken WRITE setDevToken NOTIFY devTokenChanged)
 
 public:
     enum LaunchState {
@@ -85,6 +93,21 @@ public:
     void setJavaPath(const QString& path);
     int systemRamMb() const;
 
+    // Updater API
+    bool isCheckingForUpdates() const { return m_isCheckingForUpdates; }
+    bool updateAvailable() const { return m_updateAvailable; }
+    QString updateLatestVersion() const { return m_updateLatestVersion; }
+    QString updateReleaseNotes() const { return m_updateReleaseNotes; }
+    QString updateDownloadUrl() const { return m_updateDownloadUrl; }
+    QString updateStatusMessage() const { return m_updateStatusMessage; }
+    QString updateChannel() const { return m_updateChannel; }
+    void setUpdateChannel(const QString& channel);
+    QString devToken() const { return m_devToken; }
+    void setDevToken(const QString& token);
+
+    Q_INVOKABLE void checkForUpdates(bool userTriggered = true);
+    Q_INVOKABLE void openUpdateDownload();
+
 signals:
     void isAnyInstanceRunningChanged();
     void isLaunchingChanged();
@@ -96,6 +119,9 @@ signals:
     void lastErrorChanged();
     void memorySettingsChanged();
     void javaSettingsChanged();
+    void updateStatusChanged();
+    void updateChannelChanged();
+    void devTokenChanged();
 
     void launchStarted(const QString& instanceId);
     void launchSucceeded(const QString& instanceId);
@@ -108,6 +134,9 @@ public slots:
     void setStatus(LaunchState state, const QString& message, int progress = -1);
 
 private:
+    void loadUpdaterSettings();
+    void saveUpdaterSettings();
+
     bool m_isLaunching = false;
     QString m_statusMessage;
     LaunchState m_launchState = StateReady;
@@ -117,4 +146,14 @@ private:
     QString m_lastErrorTitle;
     QString m_lastErrorMessage;
     QString m_lastErrorLog;
+
+    // Updater state
+    bool m_isCheckingForUpdates = false;
+    bool m_updateAvailable = false;
+    QString m_updateLatestVersion;
+    QString m_updateReleaseNotes;
+    QString m_updateDownloadUrl;
+    QString m_updateStatusMessage;
+    QString m_updateChannel = "stable"; // "stable" or "development"
+    QString m_devToken;
 };

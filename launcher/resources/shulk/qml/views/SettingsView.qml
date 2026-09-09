@@ -1685,6 +1685,116 @@ FocusScope {
                             }
                         }
 
+                        // -----------------------------------------------------
+                        // Software Updates Section
+                        // -----------------------------------------------------
+                        Item {
+                            implicitWidth: updateHeaderShulkText.implicitWidth + Theme.fontShadowOffset
+                            implicitHeight: updateHeaderShulkText.implicitHeight + Theme.fontShadowOffset
+
+                            Text {
+                                x: Theme.fontShadowOffset
+                                y: Theme.fontShadowOffset
+                                text: qsTr("Software Updates")
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.sizeHeader
+                                font.bold: true
+                                color: Theme.fontShadowDark
+                            }
+
+                            Text {
+                                id: updateHeaderShulkText
+                                text: qsTr("Software Updates")
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.sizeHeader
+                                font.bold: true
+                                color: Theme.mcDiamond
+                            }
+                        }
+
+                        // Channel Switcher & Check Button
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Theme.space10
+
+                            ShulkButton {
+                                Layout.preferredWidth: 160 * Theme.scale
+                                text: qsTr("Channel: Stable")
+                                variant: shulkLauncher.updateChannel === "stable" ? "play" : "secondary"
+                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 0
+                                implicitHeight: 38 * Theme.scale
+                                onClicked: { root.itemRow = 0; root.itemCol = 0; root.triggerAction(); }
+                            }
+
+                            ShulkButton {
+                                Layout.preferredWidth: 175 * Theme.scale
+                                text: qsTr("Channel: Dev (Private)")
+                                variant: shulkLauncher.updateChannel === "development" ? "play" : "secondary"
+                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 1
+                                implicitHeight: 38 * Theme.scale
+                                onClicked: { root.itemRow = 0; root.itemCol = 1; root.triggerAction(); }
+                            }
+
+                            ShulkButton {
+                                Layout.fillWidth: true
+                                text: shulkLauncher.isCheckingForUpdates ? qsTr("Checking...") : qsTr("Check for Updates")
+                                variant: "primary"
+                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 2
+                                enabled: !shulkLauncher.isCheckingForUpdates
+                                implicitHeight: 38 * Theme.scale
+                                onClicked: { root.itemRow = 0; root.itemCol = 2; root.triggerAction(); }
+                            }
+                        }
+
+                        // Status / Notification Box
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: Math.max(42 * Theme.scale, updateStatusLayout.implicitHeight + Theme.space12)
+                            radius: Theme.radiusSm
+                            color: shulkLauncher.updateAvailable ? "#1A2E1A" : Theme.bgDeep
+                            border.color: shulkLauncher.updateAvailable ? Theme.mcEmerald : Theme.borderSubtle
+                            border.width: 1
+
+                            RowLayout {
+                                id: updateStatusLayout
+                                anchors.fill: parent
+                                anchors.leftMargin: Theme.space14
+                                anchors.rightMargin: Theme.space14
+                                spacing: Theme.space10
+
+                                Text {
+                                    text: shulkLauncher.updateAvailable ? "★" : (shulkLauncher.isCheckingForUpdates ? "⏳" : "●")
+                                    font.pixelSize: Theme.sizeBody
+                                    color: shulkLauncher.updateAvailable ? Theme.mcEmerald : (shulkLauncher.isCheckingForUpdates ? Theme.mcGold : Theme.mcDiamond)
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: shulkLauncher.updateStatusMessage ? shulkLauncher.updateStatusMessage : qsTr("Ready to check for updates.")
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeBody
+                                    color: shulkLauncher.updateAvailable ? Theme.textPrimary : Theme.textSecondary
+                                    elide: Text.ElideRight
+                                }
+
+                                ShulkButton {
+                                    visible: shulkLauncher.updateAvailable
+                                    text: qsTr("Download Update")
+                                    variant: "play"
+                                    isFocused: root.focusPane === 1 && root.itemRow === 1 && root.itemCol === 0
+                                    implicitHeight: 32 * Theme.scale
+                                    onClicked: { root.itemRow = 1; root.itemCol = 0; root.triggerAction(); }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Theme.borderSubtle
+                            Layout.topMargin: Theme.space4
+                        }
+
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: Theme.space12
@@ -1692,25 +1802,25 @@ FocusScope {
                             ShulkButton {
                                 Layout.fillWidth: true
                                 text: qsTr("Shulk GitHub Repository")
-                                variant: "play"
-                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 0
-                                onClicked: { root.itemRow = 0; root.itemCol = 0; root.triggerAction(); }
+                                variant: "secondary"
+                                isFocused: root.focusPane === 1 && (shulkLauncher.updateAvailable ? (root.itemRow === 2 && root.itemCol === 0) : (root.itemRow === 1 && root.itemCol === 0))
+                                onClicked: { root.itemRow = shulkLauncher.updateAvailable ? 2 : 1; root.itemCol = 0; root.triggerAction(); }
                             }
 
                             ShulkButton {
                                 Layout.fillWidth: true
                                 text: qsTr("Visit Prism Launcher Website")
-                                variant: "primary"
-                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 1
-                                onClicked: { root.itemRow = 0; root.itemCol = 1; root.triggerAction(); }
+                                variant: "secondary"
+                                isFocused: root.focusPane === 1 && (shulkLauncher.updateAvailable ? (root.itemRow === 2 && root.itemCol === 1) : (root.itemRow === 1 && root.itemCol === 1))
+                                onClicked: { root.itemRow = shulkLauncher.updateAvailable ? 2 : 1; root.itemCol = 1; root.triggerAction(); }
                             }
 
                             ShulkButton {
                                 Layout.fillWidth: true
                                 text: qsTr("Open Global Prism Launcher Settings")
                                 variant: "secondary"
-                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 2
-                                onClicked: { root.itemRow = 0; root.itemCol = 2; root.triggerAction(); }
+                                isFocused: root.focusPane === 1 && (shulkLauncher.updateAvailable ? (root.itemRow === 2 && root.itemCol === 2) : (root.itemRow === 1 && root.itemCol === 2))
+                                onClicked: { root.itemRow = shulkLauncher.updateAvailable ? 2 : 1; root.itemCol = 2; root.triggerAction(); }
                             }
                         }
 
@@ -1763,7 +1873,7 @@ FocusScope {
         if (root.activeCategory === 3) return 3 // Max RAM, Min RAM, Advanced
         if (root.activeCategory === 4) return 1 + shulkAccounts.count // Add button + account rows
         if (root.activeCategory === 5) return shulkAccounts.count > 0 ? (shulkAccounts.count > 1 ? 3 : 2) : 1 // View modes, (Account switcher), Actions
-        if (root.activeCategory === 6) return 1 // About Actions
+        if (root.activeCategory === 6) return shulkLauncher.updateAvailable ? 3 : 2 // 0: Channels & Check, 1: (Download / Links), 2: (Links)
         return 1
     }
 
@@ -1808,7 +1918,9 @@ FocusScope {
             }
             return 1
         } else if (root.activeCategory === 6) {
-            if (row === 0) return 3 // GitHub, Website, Global Settings
+            if (row === 0) return 3 // Stable, Dev, Check for Updates
+            if (shulkLauncher.updateAvailable && row === 1) return 1 // Download Update
+            return 3 // GitHub, Website, Global Settings
         }
         return 1
     }
@@ -1859,8 +1971,7 @@ FocusScope {
                     } else {
                         shulkSound.soundEnabled = true
                         shulkSound.volume = targetVol
-                        if (targetVol === 100) shulkSound.playLaunch()
-                        else shulkSound.playClick()
+                        shulkSound.playClick()
                     }
                 }
             }
@@ -1883,22 +1994,23 @@ FocusScope {
                 root.addAccountRequested()
             } else {
                 var accIdx = root.itemRow - 1
-                if (accIdx >= 0 && accIdx < shulkAccounts.count) {
-                    var acc = shulkAccounts.get(accIdx)
+                var acc = shulkAccounts.get(accIdx)
+                if (acc) {
                     if (root.itemCol === 0) {
+                        // View Skin
                         root.skinAccountIndex = accIdx
                         root.activeCategory = 5
                         root.focusPane = 1
                         root.itemRow = 0
                         root.itemCol = 0
-                    } else if (acc.isActive) {
-                        root.confirmRemoveAccountRequested(accIdx, acc.username)
-                    } else {
-                        if (root.itemCol === 1) {
+                    } else if (root.itemCol === 1) {
+                        if (!acc.isActive) {
                             shulkAccounts.setDefaultAccount(accIdx)
-                        } else if (root.itemCol === 2) {
-                            root.confirmRemoveAccountRequested(accIdx, acc.username)
+                        } else {
+                            root.confirmRemoveAccountRequested(accIdx, acc.name)
                         }
+                    } else if (root.itemCol === 2) {
+                        root.confirmRemoveAccountRequested(accIdx, acc.name)
                     }
                 }
             }
@@ -1925,6 +2037,17 @@ FocusScope {
         } else if (root.activeCategory === 6) {
             // About Shulk
             if (root.itemRow === 0) {
+                if (root.itemCol === 0) {
+                    shulkLauncher.updateChannel = "stable"
+                } else if (root.itemCol === 1) {
+                    shulkLauncher.updateChannel = "development"
+                } else if (root.itemCol === 2) {
+                    shulkLauncher.checkForUpdates(true)
+                }
+            } else if (shulkLauncher.updateAvailable && root.itemRow === 1) {
+                shulkLauncher.openUpdateDownload()
+            } else {
+                // Links row
                 if (root.itemCol === 0) {
                     Qt.openUrlExternally("https://github.com/NaiSenshin/Shulk")
                 } else if (root.itemCol === 1) {
