@@ -16,6 +16,11 @@ FocusScope {
     property int skinViewMode: 0
     property int skinAccountIndex: 0
     property double skinCacheBuster: 0
+    property bool inAccountSkinViewer: false
+
+    onActiveCategoryChanged: {
+        inAccountSkinViewer = false
+    }
 
     signal addAccountRequested()
     signal confirmRemoveAccountRequested(int index, string name)
@@ -48,7 +53,6 @@ FocusScope {
         { name: qsTr("Audio & Sounds"), iconSource: "qrc:/shulk/icons/noteblock.png", disabled: false },
         { name: qsTr("Java & Memory"), iconSource: "qrc:/shulk/icons/redstone.png", disabled: false },
         { name: qsTr("Accounts"), iconSource: "qrc:/shulk/icons/steve_head.png", disabled: false },
-        { name: qsTr("Skin Viewer"), iconSource: "qrc:/shulk/icons/steve_head.png", disabled: false },
         { name: qsTr("About Shulk"), iconSource: "qrc:/shulk/icons/book.png", disabled: false }
     ]
 
@@ -920,680 +924,642 @@ FocusScope {
                 }
 
                 // ---------------------------------------------------------
-                // 4: ACCOUNTS
+                // 4: ACCOUNTS & SKIN VIEWER
                 // ---------------------------------------------------------
-                ColumnLayout {
-                    spacing: Theme.space16
+                Item {
+                    clip: true
 
-                    RowLayout {
-                        Layout.fillWidth: true
+                    // 4A: Accounts List View
+                    ColumnLayout {
+                        id: accountsListPane
+                        anchors.fill: parent
+                        spacing: Theme.space16
+                        visible: !root.inAccountSkinViewer
 
-                        Text {
-                            text: qsTr("Minecraft Accounts")
-                            font.pixelSize: Theme.sizeSubheading
-                            font.bold: true
-                            color: Theme.textPrimary
-                        }
+                        RowLayout {
+                            Layout.fillWidth: true
 
-                        Item { Layout.fillWidth: true }
+                            Text {
+                                text: qsTr("Minecraft Accounts")
+                                font.pixelSize: Theme.sizeSubheading
+                                font.bold: true
+                                color: Theme.textPrimary
+                            }
 
-                        // Row 0: Add Account Button
-                        ShulkButton {
-                            text: qsTr("Add Microsoft Account")
-                            variant: "play"
-                            isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 0
-                            onClicked: {
-                                root.itemRow = 0
-                                root.itemCol = 0
-                                root.triggerAction()
+                            Item { Layout.fillWidth: true }
+
+                            // Row 0: Add Account Button
+                            ShulkButton {
+                                text: qsTr("Add Microsoft Account")
+                                variant: "play"
+                                isFocused: root.focusPane === 1 && !root.inAccountSkinViewer && root.itemRow === 0 && root.itemCol === 0
+                                onClicked: {
+                                    root.itemRow = 0
+                                    root.itemCol = 0
+                                    root.triggerAction()
+                                }
                             }
                         }
-                    }
 
-                    ListView {
-                        id: accountsList
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        spacing: Theme.space8
-                        model: shulkAccounts
-                        clip: true
+                        ListView {
+                            id: accountsList
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            spacing: Theme.space8
+                            model: shulkAccounts
+                            clip: true
 
-                        delegate: Rectangle {
-                            width: ListView.view ? ListView.view.width : 0
-                            height: 60 * Theme.scale
-                            radius: Theme.radiusMedium
-                            color: model.isActive ? "#1A2E28" : Theme.bgCard
-                            border.color: model.isActive ? Theme.mcEmerald : Theme.borderSubtle
-                            border.width: model.isActive ? 2 : 1
+                            delegate: Rectangle {
+                                width: ListView.view ? ListView.view.width : 0
+                                height: 60 * Theme.scale
+                                radius: Theme.radiusMedium
+                                color: model.isActive ? "#1A2E28" : Theme.bgCard
+                                border.color: model.isActive ? Theme.mcEmerald : Theme.borderSubtle
+                                border.width: model.isActive ? 2 : 1
 
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: Theme.space12
-                                spacing: Theme.space12
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: Theme.space12
+                                    spacing: Theme.space12
 
-                                Image {
-                                    source: "https://mc-heads.net/avatar/" + model.username + "/64"
-                                    Layout.preferredWidth: 28 * Theme.scale
-                                    Layout.preferredHeight: 28 * Theme.scale
-                                    fillMode: Image.PreserveAspectFit
-                                    smooth: false
-                                    onStatusChanged: {
-                                        if (status === Image.Error) {
-                                            source = "qrc:/shulk/icons/steve_head.png"
+                                    Image {
+                                        source: "https://mc-heads.net/avatar/" + model.username + "/64"
+                                        Layout.preferredWidth: 28 * Theme.scale
+                                        Layout.preferredHeight: 28 * Theme.scale
+                                        fillMode: Image.PreserveAspectFit
+                                        smooth: false
+                                        onStatusChanged: {
+                                            if (status === Image.Error) {
+                                                source = "qrc:/shulk/icons/steve_head.png"
+                                            }
                                         }
                                     }
-                                }
 
-                                ColumnLayout {
-                                    spacing: 2
+                                    ColumnLayout {
+                                        spacing: 2
 
-                                    RowLayout {
-                                        spacing: Theme.space8
+                                        RowLayout {
+                                            spacing: Theme.space8
+                                            Item {
+                                                implicitWidth: accountUserText.implicitWidth + Theme.fontShadowOffset
+                                                implicitHeight: accountUserText.implicitHeight + Theme.fontShadowOffset
+
+                                                Text {
+                                                    x: Theme.fontShadowOffset
+                                                    y: Theme.fontShadowOffset
+                                                    text: model.username
+                                                    font.pixelSize: Theme.sizeBody
+                                                    font.bold: true
+                                                    color: Theme.fontShadowDark
+                                                }
+
+                                                Text {
+                                                    id: accountUserText
+                                                    text: model.username
+                                                    font.pixelSize: Theme.sizeBody
+                                                    font.bold: true
+                                                    color: Theme.textPrimary
+                                                }
+                                            }
+
+                                            ShulkBadge {
+                                                visible: model.isActive
+                                                text: qsTr("Active Account")
+                                                isAccent: true
+                                            }
+                                        }
+
                                         Item {
-                                            implicitWidth: accountUserText.implicitWidth + Theme.fontShadowOffset
-                                            implicitHeight: accountUserText.implicitHeight + Theme.fontShadowOffset
+                                            implicitWidth: accountDescText.implicitWidth + Theme.fontShadowOffset
+                                            implicitHeight: accountDescText.implicitHeight + Theme.fontShadowOffset
 
                                             Text {
                                                 x: Theme.fontShadowOffset
                                                 y: Theme.fontShadowOffset
-                                                text: model.username
-                                                font.pixelSize: Theme.sizeBody
-                                                font.bold: true
+                                                text: model.type + " | " + (model.ownsGame ? qsTr("Minecraft Owned") : qsTr("Offline"))
+                                                font.pixelSize: Theme.sizeCaption
                                                 color: Theme.fontShadowDark
                                             }
 
                                             Text {
-                                                id: accountUserText
-                                                text: model.username
-                                                font.pixelSize: Theme.sizeBody
-                                                font.bold: true
-                                                color: Theme.textPrimary
+                                                id: accountDescText
+                                                text: model.type + " | " + (model.ownsGame ? qsTr("Minecraft Owned") : qsTr("Offline"))
+                                                font.pixelSize: Theme.sizeCaption
+                                                color: Theme.textSecondary
                                             }
                                         }
-
-                                        ShulkBadge {
-                                            visible: model.isActive
-                                            text: qsTr("Active Account")
-                                            isAccent: true
-                                        }
                                     }
 
-                                    Item {
-                                        implicitWidth: accountDescText.implicitWidth + Theme.fontShadowOffset
-                                        implicitHeight: accountDescText.implicitHeight + Theme.fontShadowOffset
+                                    Item { Layout.fillWidth: true }
 
-                                        Text {
-                                            x: Theme.fontShadowOffset
-                                            y: Theme.fontShadowOffset
-                                            text: model.type + " | " + (model.ownsGame ? qsTr("Minecraft Owned") : qsTr("Offline"))
-                                            font.pixelSize: Theme.sizeCaption
-                                            color: Theme.fontShadowDark
-                                        }
-
-                                        Text {
-                                            id: accountDescText
-                                            text: model.type + " | " + (model.ownsGame ? qsTr("Minecraft Owned") : qsTr("Offline"))
-                                            font.pixelSize: Theme.sizeCaption
-                                            color: Theme.textSecondary
-                                        }
-                                    }
-                                }
-
-                                Item { Layout.fillWidth: true }
-
-                                ShulkButton {
-                                    text: qsTr("View Skin")
-                                    variant: "secondary"
-                                    implicitHeight: 34 * Theme.scale
-                                    Layout.alignment: Qt.AlignRight
-                                    isFocused: root.focusPane === 1 && root.itemRow === (index + 1) && root.itemCol === 0
-                                    onClicked: {
-                                        root.itemRow = index + 1
-                                        root.itemCol = 0
-                                        root.triggerAction()
-                                    }
-                                }
-
-                                ShulkButton {
-                                    visible: !model.isActive
-                                    text: qsTr("Set Active")
-                                    variant: "play"
-                                    implicitHeight: 34 * Theme.scale
-                                    Layout.alignment: Qt.AlignRight
-                                    isFocused: root.focusPane === 1 && root.itemRow === (index + 1) && root.itemCol === 1
-                                    onClicked: {
-                                        root.itemRow = index + 1
-                                        root.itemCol = 1
-                                        root.triggerAction()
-                                    }
-                                }
-
-                                ShulkButton {
-                                    text: qsTr("Remove")
-                                    variant: "danger"
-                                    implicitHeight: 34 * Theme.scale
-                                    Layout.alignment: Qt.AlignRight
-                                    isFocused: root.focusPane === 1 && root.itemRow === (index + 1) && (model.isActive ? (root.itemCol === 1) : (root.itemCol === 2))
-                                    onClicked: {
-                                        root.itemRow = index + 1
-                                        root.itemCol = model.isActive ? 1 : 2
-                                        root.triggerAction()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // ---------------------------------------------------------
-                // 5: SKIN VIEWER
-                // ---------------------------------------------------------
-                Item {
-                    id: skinViewerTab
-                    clip: true
-
-                    readonly property var currentAccount: (shulkAccounts.count > 0 && root.skinAccountIndex >= 0 && root.skinAccountIndex < shulkAccounts.count)
-                                                          ? shulkAccounts.getSkinDetails(root.skinAccountIndex)
-                                                          : null
-                    readonly property string accountUsername: currentAccount ? currentAccount.username : ""
-                    readonly property string accountUuid: currentAccount ? currentAccount.uuid : ""
-                    readonly property string skinVariant: currentAccount ? currentAccount.skinVariant : "classic"
-                    readonly property bool isCurrentActive: currentAccount ? currentAccount.isActive : false
-
-                    readonly property var viewModes: [
-                        { label: qsTr("3D Model"), mode: 0 },
-                        { label: qsTr("Front Body"), mode: 1 },
-                        { label: qsTr("Head Avatar"), mode: 2 },
-                        { label: qsTr("Skin Texture"), mode: 3 }
-                    ]
-
-                    function getPreviewUrl() {
-                        if (!currentAccount || !accountUsername) {
-                            if (root.skinViewMode === 0) return "https://mc-heads.net/player/MHF_Steve/512"
-                            if (root.skinViewMode === 1) return "https://mc-heads.net/body/MHF_Steve/512"
-                            if (root.skinViewMode === 2) return "https://mc-heads.net/avatar/MHF_Steve/256"
-                            return "https://mc-heads.net/skin/MHF_Steve"
-                        }
-                        var base = "https://mc-heads.net/"
-                        var buster = root.skinCacheBuster > 0 ? ("?" + root.skinCacheBuster) : ""
-                        if (root.skinViewMode === 0) return base + "player/" + accountUsername + "/512" + buster
-                        if (root.skinViewMode === 1) return base + "body/" + accountUsername + "/512" + buster
-                        if (root.skinViewMode === 2) return base + "avatar/" + accountUsername + "/256" + buster
-                        return base + "skin/" + accountUsername + buster
-                    }
-
-                    // EMPTY STATE (No account signed in)
-                    ColumnLayout {
-                        anchors.centerIn: parent
-                        spacing: Theme.space16
-                        visible: shulkAccounts.count === 0
-
-                        Rectangle {
-                            Layout.alignment: Qt.AlignHCenter
-                            width: 96 * Theme.scale
-                            height: 96 * Theme.scale
-                            color: Theme.bgDeep
-                            border.color: Theme.borderSubtle
-                            radius: Theme.radiusMd
-
-                            Image {
-                                anchors.centerIn: parent
-                                width: 72 * Theme.scale
-                                height: 72 * Theme.scale
-                                source: "qrc:/shulk/icons/steve_head.png"
-                                fillMode: Image.PreserveAspectFit
-                                smooth: false
-                            }
-                        }
-
-                        Item {
-                            Layout.alignment: Qt.AlignHCenter
-                            implicitWidth: noAccountTitleText.implicitWidth + Theme.fontShadowOffset
-                            implicitHeight: noAccountTitleText.implicitHeight + Theme.fontShadowOffset
-
-                            Text {
-                                x: Theme.fontShadowOffset
-                                y: Theme.fontShadowOffset
-                                text: qsTr("No Minecraft Account Connected")
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.sizeTitle
-                                font.bold: true
-                                color: Theme.fontShadowDark
-                            }
-
-                            Text {
-                                id: noAccountTitleText
-                                text: qsTr("No Minecraft Account Connected")
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.sizeTitle
-                                font.bold: true
-                                color: Theme.textPrimary
-                            }
-                        }
-
-                        Item {
-                            Layout.alignment: Qt.AlignHCenter
-                            Layout.maximumWidth: 420 * Theme.scale
-                            implicitWidth: 420 * Theme.scale
-                            implicitHeight: noAccountDescText.implicitHeight + Theme.fontShadowOffset
-
-                            Text {
-                                x: Theme.fontShadowOffset
-                                y: Theme.fontShadowOffset
-                                width: noAccountDescText.width
-                                height: noAccountDescText.height
-                                text: noAccountDescText.text
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.sizeBody
-                                color: Theme.fontShadowDark
-                                horizontalAlignment: Text.AlignHCenter
-                                wrapMode: Text.WordWrap
-                            }
-
-                            Text {
-                                id: noAccountDescText
-                                anchors.fill: parent
-                                text: qsTr("Sign in with your Microsoft Minecraft account in Settings > Accounts to preview your custom skin and player model in 3D.")
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.sizeBody
-                                color: Theme.textSecondary
-                                horizontalAlignment: Text.AlignHCenter
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-
-                        ShulkButton {
-                            Layout.alignment: Qt.AlignHCenter
-                            text: qsTr("Add Microsoft Account")
-                            variant: "play"
-                            isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 0
-                            implicitWidth: 220 * Theme.scale
-                            implicitHeight: 44 * Theme.scale
-                            onClicked: {
-                                root.itemRow = 0
-                                root.itemCol = 0
-                                root.triggerAction()
-                            }
-                        }
-                    }
-
-                    // ACTIVE SKIN VIEWER
-                    RowLayout {
-                        anchors.fill: parent
-                        spacing: Theme.space24
-                        visible: shulkAccounts.count > 0
-
-                        // Character Showcase Stage (Left Pane)
-                        Rectangle {
-                            Layout.preferredWidth: 320 * Theme.scale
-                            Layout.fillHeight: true
-                            radius: Theme.radiusMd
-                            color: Theme.bgDeep
-                            border.color: Theme.borderSubtle
-                            border.width: 1
-                            clip: true
-
-                            // Pedestal gradient
-                            Rectangle {
-                                anchors.fill: parent
-                                gradient: Gradient {
-                                    GradientStop { position: 0.0; color: "#00000000" }
-                                    GradientStop { position: 0.7; color: "#14000000" }
-                                    GradientStop { position: 1.0; color: "#40000000" }
-                                }
-                            }
-
-                            // Pedestal shadow
-                            Rectangle {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                anchors.bottom: parent.bottom
-                                anchors.bottomMargin: 24 * Theme.scale
-                                width: 180 * Theme.scale
-                                height: 26 * Theme.scale
-                                radius: 13 * Theme.scale
-                                color: "#50000000"
-                                visible: root.skinViewMode <= 1
-                            }
-
-                            // Skin / Character Image
-                            Image {
-                                id: skinImg
-                                anchors.fill: parent
-                                anchors.margins: root.skinViewMode === 3 ? Theme.space20 : Theme.space12
-                                source: skinViewerTab.getPreviewUrl()
-                                fillMode: Image.PreserveAspectFit
-                                smooth: root.skinViewMode !== 3
-                                asynchronous: true
-
-                                BusyIndicator {
-                                    anchors.centerIn: parent
-                                    running: skinImg.status === Image.Loading
-                                    visible: running
-                                }
-
-                                Item {
-                                    anchors.centerIn: parent
-                                    visible: skinImg.status === Image.Error
-                                    implicitWidth: errorLabelText.implicitWidth + Theme.fontShadowOffset
-                                    implicitHeight: errorLabelText.implicitHeight + Theme.fontShadowOffset
-
-                                    Text {
-                                        x: Theme.fontShadowOffset
-                                        y: Theme.fontShadowOffset
-                                        text: qsTr("Failed to load skin render")
-                                        font.family: Theme.fontFamily
-                                        font.pixelSize: Theme.sizeSmall
-                                        color: Theme.fontShadowDark
-                                    }
-
-                                    Text {
-                                        id: errorLabelText
-                                        text: qsTr("Failed to load skin render")
-                                        font.family: Theme.fontFamily
-                                        font.pixelSize: Theme.sizeSmall
-                                        color: Theme.textMuted
-                                    }
-                                }
-                            }
-
-                            // View mode tag
-                            Rectangle {
-                                anchors.top: parent.top
-                                anchors.left: parent.left
-                                anchors.margins: Theme.space12
-                                height: 24 * Theme.scale
-                                width: modeTagText.implicitWidth + Theme.space16 + Theme.fontShadowOffset
-                                radius: Theme.radiusSm
-                                color: "#B00C0D0E"
-                                border.color: "#40FFFFFF"
-                                border.width: 1
-
-                                Item {
-                                    anchors.centerIn: parent
-                                    implicitWidth: modeTagText.implicitWidth + Theme.fontShadowOffset
-                                    implicitHeight: modeTagText.implicitHeight + Theme.fontShadowOffset
-
-                                    Text {
-                                        x: Theme.fontShadowOffset
-                                        y: Theme.fontShadowOffset
-                                        text: skinViewerTab.viewModes[root.skinViewMode].label.toUpperCase()
-                                        font.family: Theme.fontFamily
-                                        font.pixelSize: Theme.sizeSmall
-                                        font.bold: true
-                                        color: Theme.fontShadowDark
-                                    }
-
-                                    Text {
-                                        id: modeTagText
-                                        text: skinViewerTab.viewModes[root.skinViewMode].label.toUpperCase()
-                                        font.family: Theme.fontFamily
-                                        font.pixelSize: Theme.sizeSmall
-                                        font.bold: true
-                                        color: Theme.mcDiamond
-                                    }
-                                }
-                            }
-                        }
-
-                        // Character Metadata & Controls (Right Pane)
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            spacing: Theme.space14
-
-                            // Username Header
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: Theme.space10
-
-                                Item {
-                                    Layout.fillWidth: true
-                                    implicitHeight: skinUsernameText.implicitHeight + Theme.fontShadowOffset
-
-                                    Text {
-                                        x: Theme.fontShadowOffset
-                                        y: Theme.fontShadowOffset
-                                        width: skinUsernameText.width
-                                        height: skinUsernameText.height
-                                        text: skinViewerTab.accountUsername
-                                        font.family: Theme.fontDisplay
-                                        font.pixelSize: Theme.sizeTitle
-                                        font.bold: true
-                                        color: Theme.fontShadowDark
-                                        elide: Text.ElideRight
-                                    }
-
-                                    Text {
-                                        id: skinUsernameText
-                                        anchors.fill: parent
-                                        text: skinViewerTab.accountUsername
-                                        font.family: Theme.fontDisplay
-                                        font.pixelSize: Theme.sizeTitle
-                                        font.bold: true
-                                        color: Theme.textPrimary
-                                        elide: Text.ElideRight
-                                    }
-                                }
-
-                                ShulkBadge {
-                                    visible: skinViewerTab.isCurrentActive
-                                    text: qsTr("Active")
-                                    isAccent: true
-                                }
-                            }
-
-                            // Specification Badges
-                            RowLayout {
-                                spacing: Theme.space8
-
-                                ShulkBadge {
-                                    text: skinViewerTab.skinVariant === "slim" ? qsTr("Slim (3px Arms / Alex)") : qsTr("Classic (4px Arms / Steve)")
-                                    isAccent: false
-                                }
-
-                                ShulkBadge {
-                                    text: skinViewerTab.currentAccount ? (skinViewerTab.currentAccount.type.toUpperCase() + " ACCOUNT") : ""
-                                    isAccent: false
-                                }
-                            }
-
-                            // UUID Display
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 38 * Theme.scale
-                                radius: Theme.radiusSm
-                                color: Theme.bgDeep
-                                border.color: Theme.borderSubtle
-                                border.width: 1
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: Theme.space12
-                                    anchors.rightMargin: Theme.space12
-                                    spacing: Theme.space8
-
-                                    Item {
-                                        implicitWidth: uuidLabelText.implicitWidth + Theme.fontShadowOffset
-                                        implicitHeight: uuidLabelText.implicitHeight + Theme.fontShadowOffset
-
-                                        Text {
-                                            x: Theme.fontShadowOffset
-                                            y: Theme.fontShadowOffset
-                                            text: qsTr("UUID:")
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: Theme.sizeSmall
-                                            color: Theme.fontShadowDark
-                                        }
-
-                                        Text {
-                                            id: uuidLabelText
-                                            text: qsTr("UUID:")
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: Theme.sizeSmall
-                                            color: Theme.textMuted
-                                        }
-                                    }
-
-                                    Text {
-                                        Layout.fillWidth: true
-                                        text: skinViewerTab.accountUuid
-                                        font.family: Theme.fontBody
-                                        font.pixelSize: Theme.sizeCaption
-                                        color: Theme.textSecondary
-                                        elide: Text.ElideMiddle
-                                    }
-                                }
-                            }
-
-                            Rectangle {
-                                Layout.fillWidth: true
-                                height: 1
-                                color: Theme.borderSubtle
-                            }
-
-                            // View Mode Selector
-                            Item {
-                                implicitWidth: camModeText.implicitWidth + Theme.fontShadowOffset
-                                implicitHeight: camModeText.implicitHeight + Theme.fontShadowOffset
-
-                                Text {
-                                    x: Theme.fontShadowOffset
-                                    y: Theme.fontShadowOffset
-                                    text: qsTr("Camera & Render Mode")
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeSmall
-                                    font.bold: true
-                                    color: Theme.fontShadowDark
-                                }
-
-                                Text {
-                                    id: camModeText
-                                    text: qsTr("Camera & Render Mode")
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeSmall
-                                    font.bold: true
-                                    color: Theme.mcEmerald
-                                }
-                            }
-
-                            RowLayout {
-                                Layout.fillWidth: true
-                                spacing: Theme.space8
-
-                                Repeater {
-                                    model: skinViewerTab.viewModes
-                                    delegate: ShulkButton {
-                                        Layout.fillWidth: true
-                                        text: modelData.label
-                                        variant: root.skinViewMode === modelData.mode ? "play" : "secondary"
-                                        isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === index
-                                        implicitHeight: 36 * Theme.scale
+                                    ShulkButton {
+                                        text: qsTr("View Skin")
+                                        variant: "secondary"
+                                        implicitHeight: 34 * Theme.scale
+                                        Layout.alignment: Qt.AlignRight
+                                        isFocused: root.focusPane === 1 && !root.inAccountSkinViewer && root.itemRow === (index + 1) && root.itemCol === 0
                                         onClicked: {
-                                            root.itemRow = 0
-                                            root.itemCol = index
+                                            root.itemRow = index + 1
+                                            root.itemCol = 0
+                                            root.triggerAction()
+                                        }
+                                    }
+
+                                    ShulkButton {
+                                        visible: !model.isActive
+                                        text: qsTr("Set Active")
+                                        variant: "play"
+                                        implicitHeight: 34 * Theme.scale
+                                        Layout.alignment: Qt.AlignRight
+                                        isFocused: root.focusPane === 1 && !root.inAccountSkinViewer && root.itemRow === (index + 1) && root.itemCol === 1
+                                        onClicked: {
+                                            root.itemRow = index + 1
+                                            root.itemCol = 1
+                                            root.triggerAction()
+                                        }
+                                    }
+
+                                    ShulkButton {
+                                        text: qsTr("Remove")
+                                        variant: "danger"
+                                        implicitHeight: 34 * Theme.scale
+                                        Layout.alignment: Qt.AlignRight
+                                        isFocused: root.focusPane === 1 && !root.inAccountSkinViewer && root.itemRow === (index + 1) && (model.isActive ? (root.itemCol === 1) : (root.itemCol === 2))
+                                        onClicked: {
+                                            root.itemRow = index + 1
+                                            root.itemCol = model.isActive ? 1 : 2
                                             root.triggerAction()
                                         }
                                     }
                                 }
                             }
+                        }
+                    }
 
-                            Rectangle {
-                                Layout.fillWidth: true
-                                height: 1
-                                color: Theme.borderSubtle
+                    // 4B: Skin Viewer Sub-View
+                    Item {
+                        id: skinViewerTab
+                        anchors.fill: parent
+                        visible: root.inAccountSkinViewer
+                        clip: true
+
+                        readonly property var currentAccount: (shulkAccounts.count > 0 && root.skinAccountIndex >= 0 && root.skinAccountIndex < shulkAccounts.count)
+                                                              ? shulkAccounts.getSkinDetails(root.skinAccountIndex)
+                                                              : null
+                        readonly property string accountUsername: currentAccount ? currentAccount.username : ""
+                        readonly property string accountUuid: currentAccount ? currentAccount.uuid : ""
+                        readonly property string skinVariant: currentAccount ? currentAccount.skinVariant : "classic"
+                        readonly property bool isCurrentActive: currentAccount ? currentAccount.isActive : false
+
+                        readonly property var viewModes: [
+                            { label: qsTr("3D Model"), mode: 0 },
+                            { label: qsTr("Front Body"), mode: 1 },
+                            { label: qsTr("Head Avatar"), mode: 2 },
+                            { label: qsTr("Skin Texture"), mode: 3 }
+                        ]
+
+                        function getPreviewUrl() {
+                            if (!currentAccount || !accountUsername) {
+                                if (root.skinViewMode === 0) return "https://mc-heads.net/player/MHF_Steve/512"
+                                if (root.skinViewMode === 1) return "https://mc-heads.net/body/MHF_Steve/512"
+                                if (root.skinViewMode === 2) return "https://mc-heads.net/avatar/MHF_Steve/256"
+                                return "https://mc-heads.net/skin/MHF_Steve"
                             }
+                            var base = "https://mc-heads.net/"
+                            var buster = root.skinCacheBuster > 0 ? ("?" + root.skinCacheBuster) : ""
+                            if (root.skinViewMode === 0) return base + "player/" + accountUsername + "/512" + buster
+                            if (root.skinViewMode === 1) return base + "body/" + accountUsername + "/512" + buster
+                            if (root.skinViewMode === 2) return base + "avatar/" + accountUsername + "/256" + buster
+                            return base + "skin/" + accountUsername + buster
+                        }
 
-                            // Account Switcher (if multiple accounts exist)
-                            Item {
-                                visible: shulkAccounts.count > 1
-                                implicitWidth: switchAccText.implicitWidth + Theme.fontShadowOffset
-                                implicitHeight: switchAccText.implicitHeight + Theme.fontShadowOffset
+                        ColumnLayout {
+                            anchors.fill: parent
+                            spacing: Theme.space12
 
-                                Text {
-                                    x: Theme.fontShadowOffset
-                                    y: Theme.fontShadowOffset
-                                    text: qsTr("Switch Account (%1 of %2)").arg(root.skinAccountIndex + 1).arg(shulkAccounts.count)
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeSmall
-                                    font.bold: true
-                                    color: Theme.fontShadowDark
-                                }
-
-                                Text {
-                                    id: switchAccText
-                                    text: qsTr("Switch Account (%1 of %2)").arg(root.skinAccountIndex + 1).arg(shulkAccounts.count)
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeSmall
-                                    font.bold: true
-                                    color: Theme.mcGold
-                                }
-                            }
-
+                            // Sub-View Header Navigation: Back button + title
                             RowLayout {
-                                visible: shulkAccounts.count > 1
                                 Layout.fillWidth: true
-                                spacing: Theme.space8
+                                spacing: Theme.space12
 
                                 ShulkButton {
-                                    Layout.fillWidth: true
-                                    text: qsTr("◀ Previous Account")
+                                    text: qsTr("◀ Back to Accounts")
                                     variant: "secondary"
-                                    enabled: root.skinAccountIndex > 0
-                                    isFocused: root.focusPane === 1 && root.itemRow === 1 && root.itemCol === 0
-                                    implicitHeight: 36 * Theme.scale
+                                    implicitHeight: 34 * Theme.scale
+                                    isFocused: root.focusPane === 1 && root.inAccountSkinViewer && root.itemRow === 0 && root.itemCol === 0
                                     onClicked: {
-                                        root.itemRow = 1
+                                        root.itemRow = 0
                                         root.itemCol = 0
                                         root.triggerAction()
                                     }
                                 }
 
-                                ShulkButton {
-                                    Layout.fillWidth: true
-                                    text: qsTr("Next Account ▶")
-                                    variant: "secondary"
-                                    enabled: root.skinAccountIndex < shulkAccounts.count - 1
-                                    isFocused: root.focusPane === 1 && root.itemRow === 1 && root.itemCol === 1
-                                    implicitHeight: 36 * Theme.scale
-                                    onClicked: {
-                                        root.itemRow = 1
-                                        root.itemCol = 1
-                                        root.triggerAction()
+                                Item {
+                                    implicitWidth: breadcrumbText.implicitWidth + Theme.fontShadowOffset
+                                    implicitHeight: breadcrumbText.implicitHeight + Theme.fontShadowOffset
+
+                                    Text {
+                                        x: Theme.fontShadowOffset
+                                        y: Theme.fontShadowOffset
+                                        text: skinViewerTab.accountUsername ? (skinViewerTab.accountUsername + " — " + qsTr("Skin Preview")) : qsTr("Skin Preview")
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.sizeBody
+                                        font.bold: true
+                                        color: Theme.fontShadowDark
+                                    }
+
+                                    Text {
+                                        id: breadcrumbText
+                                        text: skinViewerTab.accountUsername ? (skinViewerTab.accountUsername + " — " + qsTr("Skin Preview")) : qsTr("Skin Preview")
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.sizeBody
+                                        font.bold: true
+                                        color: Theme.mcGold
                                     }
                                 }
+
+                                Item { Layout.fillWidth: true }
                             }
 
-                            Item { Layout.fillHeight: true }
-
-                            // Bottom Actions
+                            // ACTIVE SKIN VIEWER
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: Theme.space8
+                                Layout.fillHeight: true
+                                spacing: Theme.space24
 
-                                ShulkButton {
-                                    visible: !skinViewerTab.isCurrentActive
-                                    Layout.fillWidth: true
-                                    text: qsTr("Set as Active Account")
-                                    variant: "play"
-                                    isFocused: root.focusPane === 1 && (shulkAccounts.count > 1 ? (root.itemRow === 2 && root.itemCol === 0) : (root.itemRow === 1 && root.itemCol === 0))
-                                    implicitHeight: 38 * Theme.scale
-                                    onClicked: {
-                                        root.itemRow = shulkAccounts.count > 1 ? 2 : 1
-                                        root.itemCol = 0
-                                        root.triggerAction()
+                                // Character Showcase Stage (Left Pane)
+                                Rectangle {
+                                    Layout.preferredWidth: 320 * Theme.scale
+                                    Layout.fillHeight: true
+                                    radius: Theme.radiusMd
+                                    color: Theme.bgDeep
+                                    border.color: Theme.borderSubtle
+                                    border.width: 1
+                                    clip: true
+
+                                    // Pedestal gradient
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        gradient: Gradient {
+                                            GradientStop { position: 0.0; color: "#00000000" }
+                                            GradientStop { position: 0.7; color: "#14000000" }
+                                            GradientStop { position: 1.0; color: "#40000000" }
+                                        }
+                                    }
+
+                                    // Pedestal shadow
+                                    Rectangle {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        anchors.bottom: parent.bottom
+                                        anchors.bottomMargin: 24 * Theme.scale
+                                        width: 180 * Theme.scale
+                                        height: 26 * Theme.scale
+                                        radius: 13 * Theme.scale
+                                        color: "#50000000"
+                                        visible: root.skinViewMode <= 1
+                                    }
+
+                                    // Skin / Character Image
+                                    Image {
+                                        id: skinImg
+                                        anchors.fill: parent
+                                        anchors.margins: root.skinViewMode === 3 ? Theme.space20 : Theme.space12
+                                        source: skinViewerTab.getPreviewUrl()
+                                        fillMode: Image.PreserveAspectFit
+                                        smooth: root.skinViewMode !== 3
+                                        asynchronous: true
+
+                                        BusyIndicator {
+                                            anchors.centerIn: parent
+                                            running: skinImg.status === Image.Loading
+                                            visible: running
+                                        }
+
+                                        Item {
+                                            anchors.centerIn: parent
+                                            visible: skinImg.status === Image.Error
+                                            implicitWidth: errorLabelText.implicitWidth + Theme.fontShadowOffset
+                                            implicitHeight: errorLabelText.implicitHeight + Theme.fontShadowOffset
+
+                                            Text {
+                                                x: Theme.fontShadowOffset
+                                                y: Theme.fontShadowOffset
+                                                text: qsTr("Failed to load skin render")
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: Theme.sizeSmall
+                                                color: Theme.fontShadowDark
+                                            }
+
+                                            Text {
+                                                id: errorLabelText
+                                                text: qsTr("Failed to load skin render")
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: Theme.sizeSmall
+                                                color: Theme.textMuted
+                                            }
+                                        }
+                                    }
+
+                                    // View mode tag
+                                    Rectangle {
+                                        anchors.top: parent.top
+                                        anchors.left: parent.left
+                                        anchors.margins: Theme.space12
+                                        height: 24 * Theme.scale
+                                        width: modeTagText.implicitWidth + Theme.space16 + Theme.fontShadowOffset
+                                        radius: Theme.radiusSm
+                                        color: "#B00C0D0E"
+                                        border.color: "#40FFFFFF"
+                                        border.width: 1
+
+                                        Item {
+                                            anchors.centerIn: parent
+                                            implicitWidth: modeTagText.implicitWidth + Theme.fontShadowOffset
+                                            implicitHeight: modeTagText.implicitHeight + Theme.fontShadowOffset
+
+                                            Text {
+                                                x: Theme.fontShadowOffset
+                                                y: Theme.fontShadowOffset
+                                                text: skinViewerTab.viewModes[root.skinViewMode].label.toUpperCase()
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: Theme.sizeSmall
+                                                font.bold: true
+                                                color: Theme.fontShadowDark
+                                            }
+
+                                            Text {
+                                                id: modeTagText
+                                                text: skinViewerTab.viewModes[root.skinViewMode].label.toUpperCase()
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: Theme.sizeSmall
+                                                font.bold: true
+                                                color: Theme.mcDiamond
+                                            }
+                                        }
                                     }
                                 }
 
-                                ShulkButton {
+                                // Character Metadata & Controls (Right Pane)
+                                ColumnLayout {
                                     Layout.fillWidth: true
-                                    text: qsTr("Refresh Skin")
-                                    variant: "secondary"
-                                    isFocused: root.focusPane === 1 && (shulkAccounts.count > 1 ? (root.itemRow === 2 && (skinViewerTab.isCurrentActive ? (root.itemCol === 0) : (root.itemCol === 1))) : (root.itemRow === 1 && (skinViewerTab.isCurrentActive ? (root.itemCol === 0) : (root.itemCol === 1))))
-                                    implicitHeight: 38 * Theme.scale
-                                    onClicked: {
-                                        root.itemRow = shulkAccounts.count > 1 ? 2 : 1
-                                        root.itemCol = skinViewerTab.isCurrentActive ? 0 : 1
-                                        root.triggerAction()
+                                    Layout.fillHeight: true
+                                    spacing: Theme.space14
+
+                                    // Username Header
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: Theme.space10
+
+                                        Item {
+                                            Layout.fillWidth: true
+                                            implicitHeight: skinUsernameText.implicitHeight + Theme.fontShadowOffset
+
+                                            Text {
+                                                x: Theme.fontShadowOffset
+                                                y: Theme.fontShadowOffset
+                                                width: skinUsernameText.width
+                                                height: skinUsernameText.height
+                                                text: skinViewerTab.accountUsername
+                                                font.family: Theme.fontDisplay
+                                                font.pixelSize: Theme.sizeTitle
+                                                font.bold: true
+                                                color: Theme.fontShadowDark
+                                                elide: Text.ElideRight
+                                            }
+
+                                            Text {
+                                                id: skinUsernameText
+                                                anchors.fill: parent
+                                                text: skinViewerTab.accountUsername
+                                                font.family: Theme.fontDisplay
+                                                font.pixelSize: Theme.sizeTitle
+                                                font.bold: true
+                                                color: Theme.textPrimary
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+
+                                        ShulkBadge {
+                                            visible: skinViewerTab.isCurrentActive
+                                            text: qsTr("Active")
+                                            isAccent: true
+                                        }
+                                    }
+
+                                    // Specification Badges
+                                    RowLayout {
+                                        spacing: Theme.space8
+
+                                        ShulkBadge {
+                                            text: skinViewerTab.skinVariant === "slim" ? qsTr("Slim (3px Arms / Alex)") : qsTr("Classic (4px Arms / Steve)")
+                                            isAccent: false
+                                        }
+
+                                        ShulkBadge {
+                                            text: skinViewerTab.currentAccount ? (skinViewerTab.currentAccount.type.toUpperCase() + " ACCOUNT") : ""
+                                            isAccent: false
+                                        }
+                                    }
+
+                                    // UUID Display
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 38 * Theme.scale
+                                        radius: Theme.radiusSm
+                                        color: Theme.bgDeep
+                                        border.color: Theme.borderSubtle
+                                        border.width: 1
+
+                                        RowLayout {
+                                            anchors.fill: parent
+                                            anchors.leftMargin: Theme.space12
+                                            anchors.rightMargin: Theme.space12
+                                            spacing: Theme.space8
+
+                                            Item {
+                                                implicitWidth: uuidLabelText.implicitWidth + Theme.fontShadowOffset
+                                                implicitHeight: uuidLabelText.implicitHeight + Theme.fontShadowOffset
+
+                                                Text {
+                                                    x: Theme.fontShadowOffset
+                                                    y: Theme.fontShadowOffset
+                                                    text: qsTr("UUID:")
+                                                    font.family: Theme.fontFamily
+                                                    font.pixelSize: Theme.sizeSmall
+                                                    color: Theme.fontShadowDark
+                                                }
+
+                                                Text {
+                                                    id: uuidLabelText
+                                                    text: qsTr("UUID:")
+                                                    font.family: Theme.fontFamily
+                                                    font.pixelSize: Theme.sizeSmall
+                                                    color: Theme.textMuted
+                                                }
+                                            }
+
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: skinViewerTab.accountUuid
+                                                font.family: Theme.fontBody
+                                                font.pixelSize: Theme.sizeCaption
+                                                color: Theme.textSecondary
+                                                elide: Text.ElideMiddle
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        height: 1
+                                        color: Theme.borderSubtle
+                                    }
+
+                                    // View Mode Selector
+                                    Item {
+                                        implicitWidth: camModeText.implicitWidth + Theme.fontShadowOffset
+                                        implicitHeight: camModeText.implicitHeight + Theme.fontShadowOffset
+
+                                        Text {
+                                            x: Theme.fontShadowOffset
+                                            y: Theme.fontShadowOffset
+                                            text: qsTr("Camera & Render Mode")
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.sizeSmall
+                                            font.bold: true
+                                            color: Theme.fontShadowDark
+                                        }
+
+                                        Text {
+                                            id: camModeText
+                                            text: qsTr("Camera & Render Mode")
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.sizeSmall
+                                            font.bold: true
+                                            color: Theme.mcEmerald
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: Theme.space8
+
+                                        Repeater {
+                                            model: skinViewerTab.viewModes
+                                            delegate: ShulkButton {
+                                                Layout.fillWidth: true
+                                                text: modelData.label
+                                                variant: root.skinViewMode === modelData.mode ? "play" : "secondary"
+                                                isFocused: root.focusPane === 1 && root.inAccountSkinViewer && root.itemRow === 1 && root.itemCol === index
+                                                implicitHeight: 36 * Theme.scale
+                                                onClicked: {
+                                                    root.itemRow = 1
+                                                    root.itemCol = index
+                                                    root.triggerAction()
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        height: 1
+                                        color: Theme.borderSubtle
+                                    }
+
+                                    // Account Switcher (if multiple accounts exist)
+                                    Item {
+                                        visible: shulkAccounts.count > 1
+                                        implicitWidth: switchAccText.implicitWidth + Theme.fontShadowOffset
+                                        implicitHeight: switchAccText.implicitHeight + Theme.fontShadowOffset
+
+                                        Text {
+                                            x: Theme.fontShadowOffset
+                                            y: Theme.fontShadowOffset
+                                            text: qsTr("Switch Account (%1 of %2)").arg(root.skinAccountIndex + 1).arg(shulkAccounts.count)
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.sizeSmall
+                                            font.bold: true
+                                            color: Theme.fontShadowDark
+                                        }
+
+                                        Text {
+                                            id: switchAccText
+                                            text: qsTr("Switch Account (%1 of %2)").arg(root.skinAccountIndex + 1).arg(shulkAccounts.count)
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.sizeSmall
+                                            font.bold: true
+                                            color: Theme.mcGold
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        visible: shulkAccounts.count > 1
+                                        Layout.fillWidth: true
+                                        spacing: Theme.space8
+
+                                        ShulkButton {
+                                            Layout.fillWidth: true
+                                            text: qsTr("◀ Previous Account")
+                                            variant: "secondary"
+                                            enabled: root.skinAccountIndex > 0
+                                            isFocused: root.focusPane === 1 && root.inAccountSkinViewer && root.itemRow === 2 && root.itemCol === 0
+                                            implicitHeight: 36 * Theme.scale
+                                            onClicked: {
+                                                root.itemRow = 2
+                                                root.itemCol = 0
+                                                root.triggerAction()
+                                            }
+                                        }
+
+                                        ShulkButton {
+                                            Layout.fillWidth: true
+                                            text: qsTr("Next Account ▶")
+                                            variant: "secondary"
+                                            enabled: root.skinAccountIndex < shulkAccounts.count - 1
+                                            isFocused: root.focusPane === 1 && root.inAccountSkinViewer && root.itemRow === 2 && root.itemCol === 1
+                                            implicitHeight: 36 * Theme.scale
+                                            onClicked: {
+                                                root.itemRow = 2
+                                                root.itemCol = 1
+                                                root.triggerAction()
+                                            }
+                                        }
+                                    }
+
+                                    Item { Layout.fillHeight: true }
+
+                                    // Bottom Actions
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: Theme.space8
+
+                                        ShulkButton {
+                                            visible: !skinViewerTab.isCurrentActive
+                                            Layout.fillWidth: true
+                                            text: qsTr("Set as Active Account")
+                                            variant: "play"
+                                            isFocused: root.focusPane === 1 && root.inAccountSkinViewer && (shulkAccounts.count > 1 ? (root.itemRow === 3 && root.itemCol === 0) : (root.itemRow === 2 && root.itemCol === 0))
+                                            implicitHeight: 38 * Theme.scale
+                                            onClicked: {
+                                                root.itemRow = shulkAccounts.count > 1 ? 3 : 2
+                                                root.itemCol = 0
+                                                root.triggerAction()
+                                            }
+                                        }
+
+                                        ShulkButton {
+                                            Layout.fillWidth: true
+                                            text: qsTr("Refresh Skin")
+                                            variant: "secondary"
+                                            isFocused: root.focusPane === 1 && root.inAccountSkinViewer && (shulkAccounts.count > 1 ? (root.itemRow === 3 && (skinViewerTab.isCurrentActive ? (root.itemCol === 0) : (root.itemCol === 1))) : (root.itemRow === 2 && (skinViewerTab.isCurrentActive ? (root.itemCol === 0) : (root.itemCol === 1))))
+                                            implicitHeight: 38 * Theme.scale
+                                            onClicked: {
+                                                root.itemRow = shulkAccounts.count > 1 ? 3 : 2
+                                                root.itemCol = skinViewerTab.isCurrentActive ? 0 : 1
+                                                root.triggerAction()
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1602,7 +1568,7 @@ FocusScope {
                 }
 
                 // ---------------------------------------------------------
-                // 6: ABOUT SHULK
+                // 5: ABOUT SHULK
                 // ---------------------------------------------------------
                 ScrollView {
                     contentWidth: availableWidth
@@ -1861,7 +1827,6 @@ FocusScope {
         }
     }
 }
-
     // =========================================================================
     // CONTROLLER & KEYBOARD NAVIGATION ENGINE
     // =========================================================================
@@ -1871,9 +1836,13 @@ FocusScope {
         if (root.activeCategory === 1) return 2 // Glyphs, Actions
         if (root.activeCategory === 2) return 2 // Enable/Disable, Volume Levels
         if (root.activeCategory === 3) return 3 // Max RAM, Min RAM, Advanced
-        if (root.activeCategory === 4) return 1 + shulkAccounts.count // Add button + account rows
-        if (root.activeCategory === 5) return shulkAccounts.count > 0 ? (shulkAccounts.count > 1 ? 3 : 2) : 1 // View modes, (Account switcher), Actions
-        if (root.activeCategory === 6) return shulkLauncher.updateAvailable ? 3 : 2 // 0: Channels & Check, 1: (Download / Links), 2: (Links)
+        if (root.activeCategory === 4) {
+            if (root.inAccountSkinViewer) {
+                return shulkAccounts.count > 1 ? 4 : 3 // Back, View modes, (Account switcher), Actions
+            }
+            return 1 + shulkAccounts.count // Add button + account rows
+        }
+        if (root.activeCategory === 5) return shulkLauncher.updateAvailable ? 3 : 2 // 0: Channels & Check, 1: (Download / Links), 2: (Links)
         return 1
     }
 
@@ -1894,6 +1863,23 @@ FocusScope {
             if (row === 1) return root.minRamPresets.length // 3
             if (row === 2) return 1 // Advanced Settings
         } else if (root.activeCategory === 4) {
+            if (root.inAccountSkinViewer) {
+                if (row === 0) return 1 // [◀ Back to Accounts]
+                if (row === 1) return 4 // 3D Model, Front, Head, Texture
+                if (shulkAccounts.count > 1) {
+                    if (row === 2) return 2 // Prev, Next
+                    if (row === 3) {
+                        var curAcc = shulkAccounts.get(root.skinAccountIndex)
+                        return (curAcc && curAcc.isActive) ? 1 : 2
+                    }
+                } else {
+                    if (row === 2) {
+                        var curAcc1 = shulkAccounts.get(root.skinAccountIndex)
+                        return (curAcc1 && curAcc1.isActive) ? 1 : 2
+                    }
+                }
+                return 1
+            }
             if (row === 0) return 1 // Add Account
             var accIdx = row - 1
             if (accIdx >= 0 && accIdx < shulkAccounts.count) {
@@ -1902,22 +1888,6 @@ FocusScope {
             }
             return 1
         } else if (root.activeCategory === 5) {
-            if (shulkAccounts.count === 0) return 1 // Add account button
-            if (row === 0) return 4 // 3D Model, Front, Head, Texture
-            if (shulkAccounts.count > 1) {
-                if (row === 1) return 2 // Prev, Next
-                if (row === 2) {
-                    var curAcc = shulkAccounts.get(root.skinAccountIndex)
-                    return (curAcc && curAcc.isActive) ? 1 : 2
-                }
-            } else {
-                if (row === 1) {
-                    var curAcc1 = shulkAccounts.get(root.skinAccountIndex)
-                    return (curAcc1 && curAcc1.isActive) ? 1 : 2
-                }
-            }
-            return 1
-        } else if (root.activeCategory === 6) {
             if (row === 0) return 3 // Stable, Dev, Check for Updates
             if (shulkLauncher.updateAvailable && row === 1) return 1 // Download Update
             return 3 // GitHub, Website, Global Settings
@@ -1989,42 +1959,22 @@ FocusScope {
                 shulkLauncher.showGlobalSettings("Java")
             }
         } else if (root.activeCategory === 4) {
-            // Accounts
-            if (root.itemRow === 0) {
-                root.addAccountRequested()
-            } else {
-                var accIdx = root.itemRow - 1
-                var acc = shulkAccounts.get(accIdx)
-                if (acc) {
-                    if (root.itemCol === 0) {
-                        // View Skin
-                        root.skinAccountIndex = accIdx
-                        root.activeCategory = 5
-                        root.focusPane = 1
-                        root.itemRow = 0
-                        root.itemCol = 0
-                    } else if (root.itemCol === 1) {
-                        if (!acc.isActive) {
-                            shulkAccounts.setDefaultAccount(accIdx)
-                        } else {
-                            root.confirmRemoveAccountRequested(accIdx, acc.name)
-                        }
-                    } else if (root.itemCol === 2) {
-                        root.confirmRemoveAccountRequested(accIdx, acc.name)
-                    }
-                }
-            }
-        } else if (root.activeCategory === 5) {
-            // Skin Viewer
-            if (shulkAccounts.count === 0) {
-                root.addAccountRequested()
-            } else {
+            // Accounts & Skin Viewer
+            if (root.inAccountSkinViewer) {
                 if (root.itemRow === 0) {
+                    // Back to Accounts
+                    root.inAccountSkinViewer = false
+                    root.itemRow = root.skinAccountIndex + 1
+                    root.itemCol = 0
+                } else if (root.itemRow === 1) {
+                    // View mode
                     root.skinViewMode = root.itemCol
-                } else if (shulkAccounts.count > 1 && root.itemRow === 1) {
+                } else if (shulkAccounts.count > 1 && root.itemRow === 2) {
+                    // Account switcher
                     if (root.itemCol === 0 && root.skinAccountIndex > 0) root.skinAccountIndex--
                     else if (root.itemCol === 1 && root.skinAccountIndex < shulkAccounts.count - 1) root.skinAccountIndex++
                 } else {
+                    // Actions: Set Active or Refresh Skin
                     var curAcc = shulkAccounts.get(root.skinAccountIndex)
                     var isAct = curAcc && curAcc.isActive
                     if (!isAct && root.itemCol === 0) {
@@ -2033,8 +1983,33 @@ FocusScope {
                         root.skinCacheBuster = Date.now()
                     }
                 }
+            } else {
+                if (root.itemRow === 0) {
+                    root.addAccountRequested()
+                } else {
+                    var accIdx = root.itemRow - 1
+                    var acc = shulkAccounts.get(accIdx)
+                    if (acc) {
+                        if (root.itemCol === 0) {
+                            // View Skin
+                            root.skinAccountIndex = accIdx
+                            root.inAccountSkinViewer = true
+                            root.focusPane = 1
+                            root.itemRow = 0
+                            root.itemCol = 0
+                        } else if (root.itemCol === 1) {
+                            if (!acc.isActive) {
+                                shulkAccounts.setDefaultAccount(accIdx)
+                            } else {
+                                root.confirmRemoveAccountRequested(accIdx, acc.name)
+                            }
+                        } else if (root.itemCol === 2) {
+                            root.confirmRemoveAccountRequested(accIdx, acc.name)
+                        }
+                    }
+                }
             }
-        } else if (root.activeCategory === 6) {
+        } else if (root.activeCategory === 5) {
             // About Shulk
             if (root.itemRow === 0) {
                 if (root.itemCol === 0) {
@@ -2062,8 +2037,11 @@ FocusScope {
     Connections {
         target: shulkAccounts
         function onCountChanged() {
+            if (shulkAccounts.count === 0) {
+                root.inAccountSkinViewer = false
+            }
             root.skinAccountIndex = Math.max(0, Math.min(root.skinAccountIndex, shulkAccounts.count - 1))
-            if ((root.activeCategory === 4 || root.activeCategory === 5) && root.focusPane === 1) {
+            if (root.activeCategory === 4 && root.focusPane === 1) {
                 var maxR = getMaxRows()
                 if (root.itemRow >= maxR) {
                     root.itemRow = Math.max(0, maxR - 1)
@@ -2078,6 +2056,13 @@ FocusScope {
 
     function handleAction(action) {
         if (action === Theme.actionBack) {
+            if (root.activeCategory === 4 && root.inAccountSkinViewer) {
+                root.inAccountSkinViewer = false
+                root.itemRow = root.skinAccountIndex + 1
+                root.itemCol = 0
+                if (typeof shulkSound !== "undefined") shulkSound.playDismiss()
+                return true
+            }
             if (root.focusPane === 1) {
                 root.focusPane = 0
                 if (typeof shulkSound !== "undefined") shulkSound.playDismiss()
@@ -2145,9 +2130,16 @@ FocusScope {
                     root.itemCol--
                     if (typeof shulkSound !== "undefined") shulkSound.playTick()
                 } else {
-                    // Return to category sidebar
-                    root.focusPane = 0
-                    if (typeof shulkSound !== "undefined") shulkSound.playClick()
+                    if (root.activeCategory === 4 && root.inAccountSkinViewer) {
+                        root.inAccountSkinViewer = false
+                        root.itemRow = root.skinAccountIndex + 1
+                        root.itemCol = 0
+                        if (typeof shulkSound !== "undefined") shulkSound.playClick()
+                    } else {
+                        // Return to category sidebar
+                        root.focusPane = 0
+                        if (typeof shulkSound !== "undefined") shulkSound.playClick()
+                    }
                 }
                 return true
             } else if (action === Theme.actionRight) {
@@ -2160,7 +2152,7 @@ FocusScope {
                 triggerAction()
                 return true
             } else if (action === Theme.actionPrimary) {
-                if (root.activeCategory === 4 && root.itemRow > 0) {
+                if (root.activeCategory === 4 && !root.inAccountSkinViewer && root.itemRow > 0) {
                     var delIdx = root.itemRow - 1
                     if (delIdx < shulkAccounts.count) {
                         var accToDel = shulkAccounts.get(delIdx)
