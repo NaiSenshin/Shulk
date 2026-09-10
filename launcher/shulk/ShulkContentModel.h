@@ -55,6 +55,7 @@ public:
 private:
     QPointer<MinecraftInstance> m_instance;
     QList<ModItem> m_items;
+    int m_refreshGen = 0;
 };
 
 class ShulkResourcePackListModel : public QAbstractListModel {
@@ -94,6 +95,7 @@ public:
 private:
     QPointer<MinecraftInstance> m_instance;
     QList<PackItem> m_items;
+    int m_refreshGen = 0;
 };
 
 class ShulkShaderListModel : public QAbstractListModel {
@@ -128,6 +130,7 @@ public:
 private:
     QPointer<MinecraftInstance> m_instance;
     QList<ShaderItem> m_items;
+    int m_refreshGen = 0;
 };
 
 class ShulkWorldListModel : public QAbstractListModel {

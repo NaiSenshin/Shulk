@@ -36,7 +36,14 @@ Rectangle {
             Row {
                 spacing: Theme.space8
                 ShulkControllerGlyph { glyph: "a" }
-                Text { text: root.primaryAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeBody; color: Theme.textSecondary; anchors.verticalCenter: parent.verticalCenter }
+                Item {
+                    implicitWidth: aHintText.implicitWidth
+                    implicitHeight: aHintText.implicitHeight
+                    readonly property int off: Theme.getShadowOffset(aHintText.font.pixelSize)
+                    anchors.verticalCenter: parent.verticalCenter
+                    Text { x: parent.off; y: parent.off; text: aHintText.text; font: aHintText.font; color: Theme.getShadowColor(aHintText.color) }
+                    Text { id: aHintText; x: 0; y: 0; text: root.primaryAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeBody; color: Theme.textSecondary }
+                }
             }
 
             // B Button Hint (When back is valid)
@@ -44,7 +51,14 @@ Rectangle {
                 visible: root.showBack
                 spacing: Theme.space8
                 ShulkControllerGlyph { glyph: "b" }
-                Text { text: root.secondaryAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeBody; color: Theme.textSecondary; anchors.verticalCenter: parent.verticalCenter }
+                Item {
+                    implicitWidth: bHintText.implicitWidth
+                    implicitHeight: bHintText.implicitHeight
+                    readonly property int off: Theme.getShadowOffset(bHintText.font.pixelSize)
+                    anchors.verticalCenter: parent.verticalCenter
+                    Text { x: parent.off; y: parent.off; text: bHintText.text; font: bHintText.font; color: Theme.getShadowColor(bHintText.color) }
+                    Text { id: bHintText; x: 0; y: 0; text: root.secondaryAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeBody; color: Theme.textSecondary }
+                }
             }
 
             // X Button Hint
@@ -52,7 +66,14 @@ Rectangle {
                 visible: root.playAction !== ""
                 spacing: Theme.space8
                 ShulkControllerGlyph { glyph: "x" }
-                Text { text: root.playAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeBody; color: Theme.textSecondary; anchors.verticalCenter: parent.verticalCenter }
+                Item {
+                    implicitWidth: xHintText.implicitWidth
+                    implicitHeight: xHintText.implicitHeight
+                    readonly property int off: Theme.getShadowOffset(xHintText.font.pixelSize)
+                    anchors.verticalCenter: parent.verticalCenter
+                    Text { x: parent.off; y: parent.off; text: xHintText.text; font: xHintText.font; color: Theme.getShadowColor(xHintText.color) }
+                    Text { id: xHintText; x: 0; y: 0; text: root.playAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeBody; color: Theme.textSecondary }
+                }
             }
 
             // Y Button Hint
@@ -60,7 +81,14 @@ Rectangle {
                 visible: root.searchAction !== ""
                 spacing: Theme.space8
                 ShulkControllerGlyph { glyph: "y" }
-                Text { text: root.searchAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeBody; color: Theme.textSecondary; anchors.verticalCenter: parent.verticalCenter }
+                Item {
+                    implicitWidth: yHintText.implicitWidth
+                    implicitHeight: yHintText.implicitHeight
+                    readonly property int off: Theme.getShadowOffset(yHintText.font.pixelSize)
+                    anchors.verticalCenter: parent.verticalCenter
+                    Text { x: parent.off; y: parent.off; text: yHintText.text; font: yHintText.font; color: Theme.getShadowColor(yHintText.color) }
+                    Text { id: yHintText; x: 0; y: 0; text: root.searchAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeBody; color: Theme.textSecondary }
+                }
             }
 
             // Start / Menu Button Hint
@@ -68,12 +96,13 @@ Rectangle {
                 visible: root.menuAction !== ""
                 spacing: Theme.space8
                 ShulkControllerGlyph { glyph: "menu" }
-                Text {
-                    text: root.menuAction
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.sizeBody
-                    color: Theme.textSecondary
+                Item {
+                    implicitWidth: menuHintText.implicitWidth
+                    implicitHeight: menuHintText.implicitHeight
+                    readonly property int off: Theme.getShadowOffset(menuHintText.font.pixelSize)
                     anchors.verticalCenter: parent.verticalCenter
+                    Text { x: parent.off; y: parent.off; text: menuHintText.text; font: menuHintText.font; color: Theme.getShadowColor(menuHintText.color) }
+                    Text { id: menuHintText; x: 0; y: 0; text: root.menuAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeBody; color: Theme.textSecondary }
                 }
             }
 
@@ -86,21 +115,44 @@ Rectangle {
                     ShulkControllerGlyph { glyph: "lt" }
                     ShulkControllerGlyph { glyph: "rt" }
                 }
-                Text { text: root.extraAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeCaption; color: Theme.textSecondary; anchors.verticalCenter: parent.verticalCenter }
+                Item {
+                    implicitWidth: extraHintText.implicitWidth
+                    implicitHeight: extraHintText.implicitHeight
+                    readonly property int off: Theme.getShadowOffset(extraHintText.font.pixelSize)
+                    anchors.verticalCenter: parent.verticalCenter
+                    Text { x: parent.off; y: parent.off; text: extraHintText.text; font: extraHintText.font; color: Theme.getShadowColor(extraHintText.color) }
+                    Text { id: extraHintText; x: 0; y: 0; text: root.extraAction; font.family: Theme.fontFamily; font.pixelSize: Theme.sizeCaption; color: Theme.textSecondary }
+                }
             }
         }
 
         Item { Layout.fillWidth: true }
 
         // Status text / brand subtitle
-        Text {
-            text: typeof shulkLauncher !== "undefined" && shulkLauncher.statusMessage !== ""
-                  ? shulkLauncher.statusMessage
-                  : qsTr("Minecraft: Java Edition  |  Shulk for handhelds")
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.sizeSmall
-            color: Theme.textMuted
+        Item {
+            implicitWidth: statusTextItem.implicitWidth
+            implicitHeight: statusTextItem.implicitHeight
+            readonly property int sOff: Theme.getShadowOffset(statusTextItem.font.pixelSize)
             Layout.alignment: Qt.AlignVCenter
+
+            Text {
+                x: parent.sOff
+                y: parent.sOff
+                text: statusTextItem.text
+                font: statusTextItem.font
+                color: Theme.getShadowColor(statusTextItem.color)
+            }
+
+            Text {
+                id: statusTextItem
+                x: 0; y: 0
+                text: typeof shulkLauncher !== "undefined" && shulkLauncher.statusMessage !== ""
+                      ? shulkLauncher.statusMessage
+                      : qsTr("Minecraft: Java Edition | Shulk %1").arg(typeof shulkLauncher !== "undefined" ? shulkLauncher.appVersion : "1.1.0")
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.sizeSmall
+                color: Theme.textMuted
+            }
         }
     }
 }

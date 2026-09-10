@@ -13,7 +13,9 @@
 #include "ShulkCreationService.h"
 #include "ShulkSoundManager.h"
 #include "ShulkContentModel.h"
+#include "ShulkRecentServerModel.h"
 #include "ShulkIconProvider.h"
+#include "ShulkServerIconProvider.h"
 
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -36,7 +38,9 @@ ShulkWindow::ShulkWindow(QObject* parent)
     , m_inputManager(std::make_unique<ShulkInputManager>())
     , m_creationService(std::make_unique<ShulkCreationService>())
     , m_soundManager(std::make_unique<ShulkSoundManager>())
+    , m_recentServerModel(std::make_unique<ShulkRecentServerModel>())
 {
+    m_launcherController->setRecentServerModel(m_recentServerModel.get());
 }
 
 ShulkWindow::~ShulkWindow()
@@ -46,14 +50,13 @@ ShulkWindow::~ShulkWindow()
 
 bool ShulkWindow::initialize()
 {
+    QFontDatabase::addApplicationFont(":/shulk/fonts/Minecraft.ttf");
     int fontId = QFontDatabase::addApplicationFont(":/shulk/fonts/Mojangles.otf");
-    if (fontId == -1) {
-        fontId = QFontDatabase::addApplicationFont(":/shulk/fonts/Minecraft.ttf");
-    }
     if (fontId != -1) {
         QStringList families = QFontDatabase::applicationFontFamilies(fontId);
         if (!families.isEmpty()) {
             QFont mcFont(families.first(), 10);
+            mcFont.setFamilies({ "Mojangles", "Minecraft" });
             QGuiApplication::setFont(mcFont);
             qDebug() << "Shulk: Loaded Minecraft font:" << families.first();
         }
@@ -74,8 +77,10 @@ bool ShulkWindow::initialize()
     rootCtx->setContextProperty("shulkInput", m_inputManager.get());
     rootCtx->setContextProperty("shulkCreation", m_creationService.get());
     rootCtx->setContextProperty("shulkSound", m_soundManager.get());
+    rootCtx->setContextProperty("shulkRecentServers", m_recentServerModel.get());
 
     m_engine->addImageProvider(QLatin1String("insticons"), new ShulkIconProvider());
+    m_engine->addImageProvider(QLatin1String("shulkserver"), new ShulkServerIconProvider(m_recentServerModel.get()));
     QString devQmlPath = qEnvironmentVariable("SHULK_DEV_QML");
     if (devQmlPath.isEmpty()) {
         QString localDev = QDir::current().filePath("launcher/resources/shulk/qml");

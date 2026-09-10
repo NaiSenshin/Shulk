@@ -18,12 +18,44 @@ FocusScope {
     property double skinCacheBuster: 0
     property bool inAccountSkinViewer: false
 
+    // Panorama Dropdown state
+    property bool panoramaDropdownOpen: false
+    property int panoramaDropdownIndex: 0
+
     onActiveCategoryChanged: {
         inAccountSkinViewer = false
+        panoramaDropdownOpen = false
+        ensureCategoryVisible()
     }
 
+    signal enterTopBarRequested()
     signal addAccountRequested()
+    signal openPanoramaDialogRequested()
     signal confirmRemoveAccountRequested(int index, string name)
+
+    function ensureCategoryVisible() {
+        if (typeof categoryScroll !== "undefined" && typeof catRepeater !== "undefined") {
+            var activeChild = catRepeater.itemAt(root.activeCategory)
+            if (activeChild && categoryScroll.contentWidth > categoryScroll.width) {
+                var targetX = activeChild.x - (categoryScroll.width - activeChild.width) / 2
+                categoryScroll.contentX = Math.max(0, Math.min(categoryScroll.contentWidth - categoryScroll.width, targetX))
+            }
+        }
+    }
+
+    function cycleCategory(direction) {
+        var next = root.activeCategory + direction
+        while (next >= 0 && next < root.categories.length && root.categories[next].disabled) {
+            next += direction
+        }
+        if (next >= 0 && next < root.categories.length) {
+            root.activeCategory = next
+            root.itemRow = 0
+            root.itemCol = 0
+            ensureCategoryVisible()
+            if (typeof shulkSound !== "undefined") shulkSound.playTick()
+        }
+    }
 
     readonly property var ramPresets: [
         { label: "2 GB", val: 2048 },
@@ -48,259 +80,403 @@ FocusScope {
     ]
 
     property var categories: [
-        { name: qsTr("Display & Scale"), iconSource: "qrc:/shulk/icons/grass_block.png", disabled: false },
-        { name: qsTr("Controller"), iconSource: "qrc:/shulk/icons/pickaxe.png", disabled: true },
-        { name: qsTr("Audio & Sounds"), iconSource: "qrc:/shulk/icons/noteblock.png", disabled: false },
-        { name: qsTr("Java & Memory"), iconSource: "qrc:/shulk/icons/redstone.png", disabled: false },
-        { name: qsTr("Accounts"), iconSource: "qrc:/shulk/icons/steve_head.png", disabled: false },
-        { name: qsTr("About Shulk"), iconSource: "qrc:/shulk/icons/book.png", disabled: false }
+        {
+            id: "display",
+            name: qsTr("Display & Scale"),
+            iconSource: "qrc:/shulk/icons/grass_block.png",
+            badge: "",
+            tagline: qsTr("Window resolution, interface scaling, and Minecraft background panoramas"),
+            disabled: false
+        },
+        {
+            id: "controller",
+            name: qsTr("Controller"),
+            iconSource: "qrc:/shulk/icons/pickaxe.png",
+            badge: qsTr("Coming Soon"),
+            tagline: qsTr("Handheld gamepad mapping, stick deadzones, and rumble feedback"),
+            disabled: true
+        },
+        {
+            id: "audio",
+            name: qsTr("Audio & Sounds"),
+            iconSource: "qrc:/shulk/icons/noteblock.png",
+            badge: "",
+            tagline: qsTr("Master volume, UI sound effects, and audio output settings"),
+            disabled: false
+        },
+        {
+            id: "java",
+            name: qsTr("Java & Memory"),
+            iconSource: "qrc:/shulk/icons/redstone.png",
+            badge: "",
+            tagline: qsTr("Java runtime environment, JVM arguments, and RAM allocation"),
+            disabled: false
+        },
+        {
+            id: "accounts",
+            name: qsTr("Accounts"),
+            iconSource: "qrc:/shulk/icons/steve_head.png",
+            badge: (typeof shulkAccounts !== "undefined" && shulkAccounts.count > 0) ? (shulkAccounts.count + " " + (shulkAccounts.count === 1 ? qsTr("Account") : qsTr("Accounts"))) : qsTr("0 Accounts"),
+            tagline: qsTr("Microsoft Minecraft accounts, active player profile, and 3D skin viewer"),
+            disabled: false
+        },
+        {
+            id: "about",
+            name: qsTr("About Shulk"),
+            iconSource: "qrc:/shulk/icons/shulk.png",
+            badge: "v1.1.0",
+            tagline: qsTr("Application version, dual-channel updates, credits, and system info"),
+            disabled: false
+        }
     ]
 
-    Rectangle {
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.topMargin: Theme.space8
-        anchors.leftMargin: Theme.space24
-        anchors.rightMargin: Theme.space24
-        height: 58 * Theme.scale
-        radius: Theme.radiusMd
-        color: Theme.bgCard
-        border.color: Theme.borderSubtle
-        border.width: 1
+    // Top-Level Pinned ColumnLayout (matching DiscoverView)
+    ColumnLayout {
+        id: rootCol
+        anchors.fill: parent
+        spacing: Theme.space16
 
+        Item { Layout.preferredHeight: Theme.space4 }
+
+        // =========================================================
+        // 1. TITLE & INFO HEADER (matching DiscoverView pattern)
+        // =========================================================
         RowLayout {
-            anchors.fill: parent
-            anchors.leftMargin: Theme.space16
-            anchors.rightMargin: Theme.space16
-            spacing: Theme.space12
+            Layout.fillWidth: true
+            Layout.leftMargin: Theme.space24
+            Layout.rightMargin: Theme.space24
+            spacing: Theme.space16
 
-            Image {
-                Layout.preferredWidth: 28 * Theme.scale
-                Layout.preferredHeight: 28 * Theme.scale
-                source: root.categories[root.activeCategory].iconSource
-                fillMode: Image.PreserveAspectFit
-                smooth: false
-            }
+            ColumnLayout {
+                spacing: 2
 
-            Item {
-                Layout.preferredWidth: 320 * Theme.scale
-                Layout.fillHeight: true
-                Text {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.topMargin: 9 * Theme.scale
-                    text: qsTr("Settings")
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.sizeTitle
-                    font.bold: true
-                    color: Theme.textPrimary
+                Item {
+                    readonly property int shadowOff: Theme.getShadowOffset(Theme.sizeTitle)
+                    implicitWidth: settingsTitleText.implicitWidth
+                    implicitHeight: settingsTitleText.implicitHeight
+
+                    Text {
+                        x: parent.shadowOff
+                        y: parent.shadowOff
+                        text: qsTr("Settings")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeTitle
+                        font.bold: true
+                        color: Theme.getShadowColor(settingsTitleText.color)
+                    }
+                    Text {
+                        id: settingsTitleText
+                        x: 0; y: 0
+                        text: qsTr("Settings")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeTitle
+                        font.bold: true
+                        color: Theme.textPrimary
+                    }
                 }
-                Text {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    anchors.topMargin: 34 * Theme.scale
-                    text: root.categories[root.activeCategory].name
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.sizeCaption
-                    color: Theme.textSecondary
+
+                Item {
+                    readonly property int shadowOff: Theme.getShadowOffset(Theme.sizeCaption)
+                    implicitWidth: settingsSubText.implicitWidth
+                    implicitHeight: settingsSubText.implicitHeight
+
+                    Text {
+                        x: parent.shadowOff
+                        y: parent.shadowOff
+                        text: qsTr("Configure display, interface scaling, audio, java runtime, and accounts")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeCaption
+                        color: Theme.getShadowColor(settingsSubText.color)
+                    }
+                    Text {
+                        id: settingsSubText
+                        x: 0; y: 0
+                        text: qsTr("Configure display, interface scaling, audio, java runtime, and accounts")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeCaption
+                        color: Theme.textSecondary
+                    }
                 }
             }
 
             Item { Layout.fillWidth: true }
         }
-    }
 
-    RowLayout {
-        anchors.fill: parent
-        anchors.leftMargin: Theme.space24
-        anchors.rightMargin: Theme.space24
-        anchors.bottomMargin: Theme.space16
-        anchors.topMargin: 78 * Theme.scale
-        spacing: Theme.space12
+        // =========================================================
+        // 2. HORIZONTAL CATEGORY TABS (aligned with DiscoverView)
+        // =========================================================
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.leftMargin: Theme.space24
+            Layout.rightMargin: Theme.space24
+            spacing: Theme.space8
 
-        // -------------------------------------------------------------
-        // LEFT CATEGORY BAR
-        // -------------------------------------------------------------
-        Item {
-            Layout.preferredWidth: 240 * Theme.scale
-            Layout.fillHeight: true
+                // LT Quick Switch Badge
+                Rectangle {
+                    visible: shulkInput.isController || shulkInput.inputMode === 1
+                    Layout.preferredWidth: 36 * Theme.scale
+                    Layout.preferredHeight: 34 * Theme.scale
+                    radius: 4
+                    color: "transparent"
 
-            Rectangle {
-                anchors.fill: parent
-                radius: Theme.radiusMd
-                color: Theme.bgCard
-                border.color: root.focusPane === 0 ? Theme.borderFocused : Theme.borderSubtle
-                border.width: root.focusPane === 0 ? 2 : 1
-            }
-            Rectangle {
-                anchors.fill: parent; anchors.margins: 1; radius: 2
-                visible: false
-            }
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: root.focusPane === 0 ? 2 : 1
-                radius: Theme.radiusMd
-                color: "transparent"
-                clip: true
+                    ShulkControllerGlyph {
+                        anchors.centerIn: parent
+                        glyph: "lt"
+                    }
 
-                ListView {
-                    id: categoryList
-                    anchors.fill: parent
-                    anchors.margins: Theme.space8
-                    spacing: Theme.space8
-                    model: root.categories
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: root.cycleCategory(-1)
+                    }
+                }
+
+                Flickable {
+                    id: categoryScroll
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 46 * Theme.scale
+                    contentWidth: catRowContainer.implicitWidth + Theme.space12
                     clip: true
-                    interactive: false
+                    boundsBehavior: Flickable.DragOverBounds
 
-                    delegate: Item {
-                        width: ListView.view ? ListView.view.width : 0
-                        height: 52 * Theme.scale
-                        opacity: modelData.disabled ? 0.45 : 1.0
+                    Row {
+                        id: catRowContainer
+                        spacing: Theme.space8
+                        anchors.verticalCenter: parent.verticalCenter
 
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: Theme.radiusSm
-                            color: root.activeCategory === index ? Theme.bgSurfaceFocused : (catMouse.containsMouse && !modelData.disabled ? Theme.bgSurfaceHover : "transparent")
-                            border.color: root.activeCategory === index && root.focusPane === 0 ? Theme.borderFocused : (root.activeCategory === index ? Theme.borderSubtle : "transparent")
-                            border.width: root.activeCategory === index ? (root.focusPane === 0 ? 2 : 1) : 0
-                        }
-                        Rectangle {
-                            anchors.fill: parent
-                            anchors.margins: 1
-                            radius: 2
-                            visible: false
-                        }
-                        Rectangle {
-                            anchors.fill: parent
-                            anchors.margins: root.activeCategory === index && root.focusPane === 0 ? 2 : 1
-                            radius: Theme.radiusSm
-                            color: "transparent"
-                            clip: true
+                        Repeater {
+                            id: catRepeater
+                            model: root.categories
+                            delegate: Rectangle {
+                                height: 40 * Theme.scale
+                                width: catTabRow.implicitWidth + Theme.space16
+                                radius: Theme.radiusSm
+                                color: root.activeCategory === index ? Theme.bgSurfaceFocused : (catTabMouse.containsMouse ? Theme.bgCardHover : Theme.bgCard)
+                                border.color: (root.focusPane === 0 && root.activeCategory === index) ? Theme.borderFocused : Theme.borderSubtle
+                                border.width: (root.focusPane === 0 && root.activeCategory === index) ? 2 : 1
+                                opacity: modelData.disabled ? 0.45 : 1.0
+                                Behavior on border.color { ColorAnimation { duration: Theme.animFast } }
 
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: Theme.space8
-                                spacing: Theme.space12
+                                // Emerald underline indicator on active tab
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.bottom: parent.bottom
+                                    height: 3 * Theme.scale
+                                    color: Theme.accentPlay
+                                    visible: root.activeCategory === index
+                                }
 
-                                BorderImage {
-                                    Layout.preferredWidth: 34 * Theme.scale
-                                    Layout.preferredHeight: 34 * Theme.scale
-                                    source: "qrc:/shulk/assets/mc/gui/slot.png"
-                                    border { left: 4; top: 4; right: 4; bottom: 4 }
-                                    horizontalTileMode: BorderImage.Stretch
-                                    verticalTileMode: BorderImage.Stretch
-                                    smooth: false
+                                RowLayout {
+                                    id: catTabRow
+                                    anchors.centerIn: parent
+                                    spacing: Theme.space8
 
                                     Image {
-                                        anchors.centerIn: parent
-                                        width: 22 * Theme.scale
-                                        height: 22 * Theme.scale
                                         source: modelData.iconSource
+                                        Layout.preferredWidth: 18 * Theme.scale
+                                        Layout.preferredHeight: 18 * Theme.scale
                                         fillMode: Image.PreserveAspectFit
                                         smooth: false
                                     }
-                                }
 
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: 1
+                                    Item {
+                                        implicitWidth: catTabNameText.implicitWidth
+                                        implicitHeight: catTabNameText.implicitHeight
+                                        readonly property int tabOff: Theme.getShadowOffset(catTabNameText.font.pixelSize)
 
-                                    RowLayout {
-                                        spacing: Theme.space6
-                                        Layout.fillWidth: true
-
-                                        ShulkText {
+                                        Text {
+                                            x: parent.tabOff; y: parent.tabOff
+                                            text: catTabNameText.text
+                                            font: catTabNameText.font
+                                            color: Theme.getShadowColor(catTabNameText.color)
+                                        }
+                                        Text {
+                                            id: catTabNameText
+                                            x: 0; y: 0
                                             text: modelData.name
                                             font.pixelSize: Theme.sizeBody
                                             font.bold: root.activeCategory === index
-                                            color: modelData.disabled ? "#7E828A" : Theme.textPrimary
-                                            dropShadow: (root.activeCategory === index)
-                                            elide: Text.ElideRight
+                                            color: modelData.disabled ? "#7E828A" : (root.activeCategory === index ? "#FFFFFF" : Theme.textPrimary)
                                         }
+                                    }
 
-                                        Rectangle {
-                                            visible: !!modelData.disabled
-                                            Layout.preferredHeight: 18 * Theme.scale
-                                            Layout.preferredWidth: comingSoonText.implicitWidth + 8 * Theme.scale
-                                            radius: 3
-                                            color: "#352A18"
-                                            border.color: "#8A6D3B"
-                                            border.width: 1
+                                    Rectangle {
+                                        visible: !!modelData.badge && modelData.badge.length > 0
+                                        Layout.preferredHeight: 18 * Theme.scale
+                                        Layout.preferredWidth: catBadgeText.implicitWidth + 8
+                                        radius: 3
+                                        color: modelData.disabled ? "#352A18" : (root.activeCategory === index ? "#20351F" : Theme.bgDeep)
+                                        border.color: modelData.disabled ? "#8A6D3B" : (root.activeCategory === index ? Theme.mcEmerald : Theme.borderSubtle)
+                                        border.width: 1
+
+                                        Item {
+                                            anchors.centerIn: parent
+                                            implicitWidth: catBadgeText.implicitWidth
+                                            implicitHeight: catBadgeText.implicitHeight
+                                            readonly property int badgeOff: Theme.getShadowOffset(catBadgeText.font.pixelSize)
 
                                             Text {
-                                                id: comingSoonText
-                                                anchors.centerIn: parent
-                                                text: qsTr("Coming Soon")
-                                                font.family: Theme.fontFamily
-                                                font.pixelSize: 9 * Theme.scale
+                                                x: parent.badgeOff; y: parent.badgeOff
+                                                text: catBadgeText.text
+                                                font: catBadgeText.font
+                                                color: Theme.getShadowColor(catBadgeText.color)
+                                            }
+                                            Text {
+                                                id: catBadgeText
+                                                x: 0; y: 0
+                                                text: modelData.badge
+                                                font.pixelSize: Theme.sizeSmall
                                                 font.bold: true
-                                                color: "#FFAA00"
+                                                color: modelData.disabled ? "#FFAA00" : (root.activeCategory === index ? Theme.mcEmerald : Theme.textSecondary)
                                             }
                                         }
-
-                                        Item { Layout.fillWidth: true }
                                     }
                                 }
 
-                                Rectangle {
-                                    visible: root.activeCategory === index && root.focusPane === 0
-                                    Layout.preferredWidth: 8 * Theme.scale
-                                    Layout.preferredHeight: 8 * Theme.scale
-                                    color: Theme.mcDiamond
-                                    rotation: 45
-                                    Layout.rightMargin: Theme.space8
-                                }
-                            }
-
-                            MouseArea {
-                                id: catMouse
-                                anchors.fill: parent
-                                enabled: !modelData.disabled
-                                hoverEnabled: !modelData.disabled
-                                cursorShape: modelData.disabled ? Qt.ArrowCursor : Qt.PointingHandCursor
-                                onClicked: {
-                                    if (modelData.disabled) return
-                                    root.activeCategory = index
-                                    root.focusPane = 0
-                                    if (typeof shulkSound !== "undefined") shulkSound.playClick()
+                                MouseArea {
+                                    id: catTabMouse
+                                    anchors.fill: parent
+                                    enabled: !modelData.disabled
+                                    hoverEnabled: !modelData.disabled
+                                    cursorShape: modelData.disabled ? Qt.ArrowCursor : Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (modelData.disabled) return
+                                        root.activeCategory = index
+                                        root.focusPane = 0
+                                        if (typeof shulkSound !== "undefined") shulkSound.playClick()
+                                    }
                                 }
                             }
                         }
                     }
                 }
+
+                // RT Quick Switch Badge
+                Rectangle {
+                    visible: shulkInput.isController || shulkInput.inputMode === 1
+                    Layout.preferredWidth: 36 * Theme.scale
+                    Layout.preferredHeight: 34 * Theme.scale
+                    radius: 4
+                    color: "transparent"
+
+                    ShulkControllerGlyph {
+                        anchors.centerIn: parent
+                        glyph: "rt"
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: root.cycleCategory(1)
+                    }
+                }
+        }
+
+        // =========================================================
+        // 3. CATEGORY SUMMARY BAR (matching DiscoverView)
+        // =========================================================
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.leftMargin: Theme.space24
+            Layout.rightMargin: Theme.space24
+            Layout.preferredHeight: 46 * Theme.scale
+            radius: Theme.radiusMd
+            color: Theme.bgCard
+            border.color: Theme.borderSubtle
+            border.width: 1
+
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: Theme.space16
+                anchors.rightMargin: Theme.space16
+                spacing: Theme.space12
+
+                BorderImage {
+                    Layout.preferredWidth: 30 * Theme.scale
+                    Layout.preferredHeight: 30 * Theme.scale
+                    source: "qrc:/shulk/assets/mc/gui/slot.png"
+                    border { left: 4; top: 4; right: 4; bottom: 4 }
+                    horizontalTileMode: BorderImage.Stretch
+                    verticalTileMode: BorderImage.Stretch
+                    smooth: false
+
+                    Image {
+                        anchors.centerIn: parent
+                        width: 20 * Theme.scale
+                        height: 20 * Theme.scale
+                        source: root.categories[root.activeCategory].iconSource
+                        fillMode: Image.PreserveAspectFit
+                        smooth: false
+                    }
+                }
+
+                Item {
+                    implicitWidth: catSummaryTitle.implicitWidth
+                    implicitHeight: catSummaryTitle.implicitHeight
+                    readonly property int off: Theme.getShadowOffset(catSummaryTitle.font.pixelSize)
+
+                    Text {
+                        x: parent.off; y: parent.off
+                        text: catSummaryTitle.text
+                        font: catSummaryTitle.font
+                        color: Theme.getShadowColor(catSummaryTitle.color)
+                    }
+                    Text {
+                        id: catSummaryTitle
+                        x: 0; y: 0
+                        text: root.categories[root.activeCategory].name
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeSubheading
+                        font.bold: true
+                        color: Theme.textPrimary
+                    }
+                }
+
+                Item {
+                    implicitWidth: catSummaryTag.implicitWidth
+                    implicitHeight: catSummaryTag.implicitHeight
+                    readonly property int off: Theme.getShadowOffset(catSummaryTag.font.pixelSize)
+
+                    Text {
+                        x: parent.off; y: parent.off
+                        text: catSummaryTag.text
+                        font: catSummaryTag.font
+                        color: Theme.getShadowColor(catSummaryTag.color)
+                    }
+                    Text {
+                        id: catSummaryTag
+                        x: 0; y: 0
+                        text: "— " + root.categories[root.activeCategory].tagline
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeCaption
+                        color: Theme.textSecondary
+                    }
+                }
+
+                Item { Layout.fillWidth: true }
             }
         }
 
-        // -------------------------------------------------------------
-        // RIGHT SETTINGS CONTENT
-        // -------------------------------------------------------------
-        Item {
+        // =========================================================
+        // 4. MAIN SETTINGS CONTENT CARD
+        // =========================================================
+        Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.leftMargin: Theme.space24
+            Layout.rightMargin: Theme.space24
+            Layout.bottomMargin: Theme.space16
+            radius: Theme.radiusMd
+            color: Theme.bgCard
+            border.color: root.focusPane === 1 ? Theme.borderFocused : Theme.borderSubtle
+            border.width: root.focusPane === 1 ? 2 : 1
 
-            Rectangle {
+            StackLayout {
+                id: settingsStack
                 anchors.fill: parent
-                radius: Theme.radiusMd
-                color: Theme.bgCard
-                border.color: root.focusPane === 1 ? Theme.borderFocused : Theme.borderSubtle
-                border.width: root.focusPane === 1 ? 2 : 1
-            }
-            Rectangle {
-                anchors.fill: parent; anchors.margins: 1; radius: 2
-                visible: false
-            }
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: root.focusPane === 1 ? 2 : 1
-                radius: Theme.radiusMd
-                color: "transparent"
-                clip: true
-
-                StackLayout {
-                    anchors.fill: parent
-                    anchors.margins: Theme.space24
-                    currentIndex: root.activeCategory
+                anchors.margins: Theme.space20
+                currentIndex: root.activeCategory
 
                     // ---------------------------------------------------------
                     // 0: DISPLAY & SCALING
@@ -311,13 +487,36 @@ FocusScope {
 
                     ColumnLayout {
                         width: parent.width
-                        spacing: Theme.space20
+                        spacing: Theme.space16
 
-                        Text {
-                            text: qsTr("Display & Interface Scaling")
-                            font.pixelSize: Theme.sizeSubheading
-                            font.bold: true
-                            color: Theme.textPrimary
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 39 * Theme.scale
+                            Layout.topMargin: 1 * Theme.scale
+
+                            Item {
+                                implicitWidth: dispTitleText.implicitWidth
+                                implicitHeight: dispTitleText.implicitHeight
+                                readonly property int off: Theme.getShadowOffset(dispTitleText.font.pixelSize)
+
+                                Text {
+                                    x: parent.off; y: parent.off
+                                    text: dispTitleText.text
+                                    font: dispTitleText.font
+                                    color: Theme.getShadowColor(dispTitleText.color)
+                                }
+                                Text {
+                                    id: dispTitleText
+                                    x: 0; y: 0
+                                    text: qsTr("Display & Interface Scaling")
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeSubheading
+                                    font.bold: true
+                                    color: Theme.textPrimary
+                                }
+                            }
+
+                            Item { Layout.fillWidth: true }
                         }
 
                         // Active resolution & scale status banner
@@ -356,57 +555,138 @@ FocusScope {
                             }
                         }
 
-                        // Row 0: Scale Factor Presets
-                        Text {
-                            text: qsTr("Interface Scaling Preset")
-                            font.pixelSize: Theme.sizeSmall
-                            font.bold: true
-                            color: Theme.mcEmerald
+                        // Row 0: Background Panorama Dropdown & Random Roll
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                text: qsTr("Background Panorama")
+                                font.pixelSize: Theme.sizeSmall
+                                font.bold: true
+                                color: Theme.mcEmerald
+                            }
+                            Item { Layout.fillWidth: true }
+                            Text {
+                                text: qsTr("Theme: %1").arg(shulkTheme.panoramaSetting === "random" ? qsTr("Random (Every Launch)") : shulkTheme.panoramaTitle)
+                                font.pixelSize: Theme.sizeSmall
+                                color: Theme.textSecondary
+                            }
                         }
 
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: Theme.space8
+                            spacing: Theme.space12
 
-                            ShulkButton {
+                            // Panorama Dropdown Button
+                            Rectangle {
+                                id: panoramaDropdownBtn
                                 Layout.fillWidth: true
-                                text: qsTr("Auto (Device)")
-                                isPrimary: shulkTheme.customScaleFactor <= 0.0
-                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 0
-                                onClicked: root.triggerAction()
+                                Layout.maximumWidth: 420 * Theme.scale
+                                height: 38 * Theme.scale
+                                radius: Theme.radiusSm
+                                readonly property bool isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 0
+
+                                color: isFocused ? Theme.accentPlayHover : (dropdownMouse.containsMouse ? "#3A3C3D" : "#2B2D2E")
+                                border.color: isFocused ? Theme.borderFocused : "#62000000"
+                                border.width: isFocused ? 2 : 1
+
+                                Rectangle {
+                                    anchors.left: parent.left
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    anchors.margins: panoramaDropdownBtn.isFocused ? 3 : 2
+                                    height: 1
+                                    color: panoramaDropdownBtn.isFocused ? "#4FFFFFFF" : "#28FFFFFF"
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: Theme.space12
+                                    anchors.rightMargin: Theme.space12
+                                    spacing: Theme.space8
+
+                                    Image {
+                                        Layout.preferredWidth: 20 * Theme.scale
+                                        Layout.preferredHeight: 20 * Theme.scale
+                                        source: "qrc:/shulk/icons/compass.png"
+                                        fillMode: Image.PreserveAspectFit
+                                        smooth: false
+                                    }
+
+                                    Item {
+                                        Layout.fillWidth: true
+                                        height: ddActiveTitle.implicitHeight
+                                        readonly property int ddOffset: Theme.getShadowOffset(ddActiveTitle.font.pixelSize)
+
+                                        Text {
+                                            x: parent.ddOffset
+                                            y: parent.ddOffset
+                                            width: parent.width - parent.ddOffset
+                                            text: shulkTheme.panoramaSetting === "random" ? qsTr("Random (Every Launch)") : shulkTheme.panoramaTitle
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.sizeBody
+                                            font.bold: true
+                                            color: Theme.getShadowColor(ddActiveTitle.color)
+                                            elide: Text.ElideRight
+                                        }
+
+                                        Text {
+                                            id: ddActiveTitle
+                                            x: 0
+                                            y: 0
+                                            width: parent.width
+                                            text: shulkTheme.panoramaSetting === "random" ? qsTr("Random (Every Launch)") : shulkTheme.panoramaTitle
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.sizeBody
+                                            font.bold: true
+                                            color: panoramaDropdownBtn.isFocused ? "#FFFFAA" : Theme.textPrimary
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+
+                                    ShulkBadge {
+                                        visible: shulkTheme.consolePanoramasUnlocked && shulkTheme.activePanoramaId.indexOf("console_") === 0
+                                        text: qsTr("Console")
+                                        badgeColor: "#2A1838"
+                                        textColor: "#E9D5FF"
+                                    }
+
+                                    Text {
+                                        text: ">"
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.sizeSmall
+                                        font.bold: true
+                                        color: panoramaDropdownBtn.isFocused ? "#FFFFAA" : Theme.textSecondary
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: dropdownMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        root.focusPane = 1
+                                        root.itemRow = 0
+                                        root.itemCol = 0
+                                        root.triggerAction()
+                                    }
+                                }
                             }
 
+                            // Choose Random Button
                             ShulkButton {
-                                Layout.fillWidth: true
-                                text: "1.0x (Deck)"
-                                isPrimary: Math.abs(shulkTheme.customScaleFactor - 1.0) < 0.01
+                                text: qsTr("Choose Random")
+                                variant: "play"
+                                implicitHeight: 38 * Theme.scale
                                 isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 1
-                                onClicked: { root.itemRow = 0; root.itemCol = 1; root.triggerAction(); }
+                                onClicked: {
+                                    root.itemRow = 0
+                                    root.itemCol = 1
+                                    root.triggerAction()
+                                }
                             }
 
-                            ShulkButton {
-                                Layout.fillWidth: true
-                                text: "1.35x (Ally)"
-                                isPrimary: Math.abs(shulkTheme.customScaleFactor - 1.35) < 0.01
-                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 2
-                                onClicked: { root.itemRow = 0; root.itemCol = 2; root.triggerAction(); }
-                            }
-
-                            ShulkButton {
-                                Layout.fillWidth: true
-                                text: "1.70x (Go)"
-                                isPrimary: Math.abs(shulkTheme.customScaleFactor - 1.70) < 0.01
-                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 3
-                                onClicked: { root.itemRow = 0; root.itemCol = 3; root.triggerAction(); }
-                            }
-
-                            ShulkButton {
-                                Layout.fillWidth: true
-                                text: "2.0x (TV)"
-                                isPrimary: Math.abs(shulkTheme.customScaleFactor - 2.0) < 0.01
-                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 4
-                                onClicked: { root.itemRow = 0; root.itemCol = 4; root.triggerAction(); }
-                            }
+                            Item { Layout.fillWidth: true }
                         }
 
                         Rectangle {
@@ -462,61 +742,56 @@ FocusScope {
                             Layout.bottomMargin: Theme.space4
                         }
 
-                        // Row 2 & 3: Background Panorama Presets
-                        RowLayout {
-                            Layout.fillWidth: true
-
-                            ColumnLayout {
-                                spacing: 2
-                                Text {
-                                    text: qsTr("Background Panorama Theme")
-                                    font.pixelSize: Theme.sizeSmall
-                                    font.bold: true
-                                    color: Theme.mcEmerald
-                                }
-                                Text {
-                                    text: qsTr("Active: %1").arg(shulkTheme.panoramaTitle)
-                                    font.pixelSize: Theme.sizeSmall
-                                    color: Theme.textGold
-                                }
-                            }
-
-                            Item { Layout.fillWidth: true }
-
-                            // Row 2: Roll Random Button
-                            ShulkButton {
-                                text: qsTr("Choose Random")
-                                variant: "play"
-                                implicitHeight: 34 * Theme.scale
-                                isFocused: root.focusPane === 1 && root.itemRow === 2 && root.itemCol === 0
-                                onClicked: {
-                                    root.itemRow = 2
-                                    root.itemCol = 0
-                                    root.triggerAction()
-                                }
-                            }
+                        // Row 2: Scale Factor Presets
+                        Text {
+                            text: qsTr("Interface Scaling Preset")
+                            font.pixelSize: Theme.sizeSmall
+                            font.bold: true
+                            color: Theme.mcEmerald
                         }
 
-                        // Row 3: Panorama Grid
-                        Flow {
+                        RowLayout {
                             Layout.fillWidth: true
                             spacing: Theme.space8
 
-                            Repeater {
-                                model: shulkTheme.availablePanoramas
+                            ShulkButton {
+                                Layout.fillWidth: true
+                                text: qsTr("Auto (Device)")
+                                isPrimary: shulkTheme.customScaleFactor <= 0.0
+                                isFocused: root.focusPane === 1 && root.itemRow === 2 && root.itemCol === 0
+                                onClicked: { root.itemRow = 2; root.itemCol = 0; root.triggerAction(); }
+                            }
 
-                                delegate: ShulkButton {
-                                    text: modelData.title
-                                    isPrimary: (shulkTheme.panoramaSetting === modelData.id) || (modelData.id !== "random" && shulkTheme.panoramaSetting === "random" && shulkTheme.activePanoramaId === modelData.id)
-                                    variant: isPrimary ? "primary" : "secondary"
-                                    implicitHeight: 32 * Theme.scale
-                                    isFocused: root.focusPane === 1 && root.itemRow === 3 && root.itemCol === index
-                                    onClicked: {
-                                        root.itemRow = 3
-                                        root.itemCol = index
-                                        root.triggerAction()
-                                    }
-                                }
+                            ShulkButton {
+                                Layout.fillWidth: true
+                                text: "1.0x (Deck)"
+                                isPrimary: Math.abs(shulkTheme.customScaleFactor - 1.0) < 0.01
+                                isFocused: root.focusPane === 1 && root.itemRow === 2 && root.itemCol === 1
+                                onClicked: { root.itemRow = 2; root.itemCol = 1; root.triggerAction(); }
+                            }
+
+                            ShulkButton {
+                                Layout.fillWidth: true
+                                text: "1.35x (Ally)"
+                                isPrimary: Math.abs(shulkTheme.customScaleFactor - 1.35) < 0.01
+                                isFocused: root.focusPane === 1 && root.itemRow === 2 && root.itemCol === 2
+                                onClicked: { root.itemRow = 2; root.itemCol = 2; root.triggerAction(); }
+                            }
+
+                            ShulkButton {
+                                Layout.fillWidth: true
+                                text: "1.70x (Go)"
+                                isPrimary: Math.abs(shulkTheme.customScaleFactor - 1.70) < 0.01
+                                isFocused: root.focusPane === 1 && root.itemRow === 2 && root.itemCol === 3
+                                onClicked: { root.itemRow = 2; root.itemCol = 3; root.triggerAction(); }
+                            }
+
+                            ShulkButton {
+                                Layout.fillWidth: true
+                                text: "2.0x (TV)"
+                                isPrimary: Math.abs(shulkTheme.customScaleFactor - 2.0) < 0.01
+                                isFocused: root.focusPane === 1 && root.itemRow === 2 && root.itemCol === 4
+                                onClicked: { root.itemRow = 2; root.itemCol = 4; root.triggerAction(); }
                             }
                         }
                     }
@@ -648,19 +923,57 @@ FocusScope {
 
                     ColumnLayout {
                         width: parent.width
-                        spacing: Theme.space20
+                        spacing: Theme.space16
 
-                        Text {
-                            text: qsTr("UI Sound Effects & Volume")
-                            font.pixelSize: Theme.sizeSubheading
-                            font.bold: true
-                            color: Theme.textPrimary
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 39 * Theme.scale
+                            Layout.topMargin: 1 * Theme.scale
+
+                            Item {
+                                implicitWidth: audioTitleText.implicitWidth
+                                implicitHeight: audioTitleText.implicitHeight
+                                readonly property int off: Theme.getShadowOffset(audioTitleText.font.pixelSize)
+
+                                Text {
+                                    x: parent.off; y: parent.off
+                                    text: audioTitleText.text
+                                    font: audioTitleText.font
+                                    color: Theme.getShadowColor(audioTitleText.color)
+                                }
+                                Text {
+                                    id: audioTitleText
+                                    x: 0; y: 0
+                                    text: qsTr("UI Sound Effects & Volume")
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeSubheading
+                                    font.bold: true
+                                    color: Theme.textPrimary
+                                }
+                            }
+
+                            Item { Layout.fillWidth: true }
                         }
 
-                        Text {
-                            text: qsTr("Authentic Minecraft interface audio for controller navigation, card clicks, and launches.")
-                            font.pixelSize: Theme.sizeBody
-                            color: Theme.textSecondary
+                        Item {
+                            implicitWidth: audioDescText.implicitWidth
+                            implicitHeight: audioDescText.implicitHeight
+                            readonly property int off: Theme.getShadowOffset(audioDescText.font.pixelSize)
+
+                            Text {
+                                x: parent.off; y: parent.off
+                                text: audioDescText.text
+                                font: audioDescText.font
+                                color: Theme.getShadowColor(audioDescText.color)
+                            }
+                            Text {
+                                id: audioDescText
+                                x: 0; y: 0
+                                text: qsTr("Authentic Minecraft interface audio for controller navigation, card clicks, and launches.")
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.sizeBody
+                                color: Theme.textSecondary
+                            }
                         }
 
                         // Row 0: Sound Enable / Disable
@@ -768,13 +1081,36 @@ FocusScope {
 
                     ColumnLayout {
                         width: parent.width
-                        spacing: Theme.space20
+                        spacing: Theme.space16
 
-                        Text {
-                            text: qsTr("Java Runtime & Memory (RAM)")
-                            font.pixelSize: Theme.sizeSubheading
-                            font.bold: true
-                            color: Theme.textPrimary
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 39 * Theme.scale
+                            Layout.topMargin: 1 * Theme.scale
+
+                            Item {
+                                implicitWidth: javaTitleText.implicitWidth
+                                implicitHeight: javaTitleText.implicitHeight
+                                readonly property int off: Theme.getShadowOffset(javaTitleText.font.pixelSize)
+
+                                Text {
+                                    x: parent.off; y: parent.off
+                                    text: javaTitleText.text
+                                    font: javaTitleText.font
+                                    color: Theme.getShadowColor(javaTitleText.color)
+                                }
+                                Text {
+                                    id: javaTitleText
+                                    x: 0; y: 0
+                                    text: qsTr("Java Runtime & Memory (RAM)")
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeSubheading
+                                    font.bold: true
+                                    color: Theme.textPrimary
+                                }
+                            }
+
+                            Item { Layout.fillWidth: true }
                         }
 
                         // RAM Info Banner
@@ -938,12 +1274,29 @@ FocusScope {
 
                         RowLayout {
                             Layout.fillWidth: true
+                            Layout.preferredHeight: 39 * Theme.scale
+                            Layout.topMargin: 1 * Theme.scale
 
-                            Text {
-                                text: qsTr("Minecraft Accounts")
-                                font.pixelSize: Theme.sizeSubheading
-                                font.bold: true
-                                color: Theme.textPrimary
+                            Item {
+                                implicitWidth: accountsTitleText.implicitWidth
+                                implicitHeight: accountsTitleText.implicitHeight
+                                readonly property int off: Theme.getShadowOffset(accountsTitleText.font.pixelSize)
+
+                                Text {
+                                    x: parent.off; y: parent.off
+                                    text: accountsTitleText.text
+                                    font: accountsTitleText.font
+                                    color: Theme.getShadowColor(accountsTitleText.color)
+                                }
+                                Text {
+                                    id: accountsTitleText
+                                    x: 0; y: 0
+                                    text: qsTr("Minecraft Accounts")
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeSubheading
+                                    font.bold: true
+                                    color: Theme.textPrimary
+                                }
                             }
 
                             Item { Layout.fillWidth: true }
@@ -1001,8 +1354,8 @@ FocusScope {
                                         RowLayout {
                                             spacing: Theme.space8
                                             Item {
-                                                implicitWidth: accountUserText.implicitWidth + Theme.fontShadowOffset
-                                                implicitHeight: accountUserText.implicitHeight + Theme.fontShadowOffset
+                                                implicitWidth: accountUserText.implicitWidth
+                                                implicitHeight: accountUserText.implicitHeight
 
                                                 Text {
                                                     x: Theme.fontShadowOffset
@@ -1015,6 +1368,8 @@ FocusScope {
 
                                                 Text {
                                                     id: accountUserText
+                                                    x: 0
+                                                    y: 0
                                                     text: model.username
                                                     font.pixelSize: Theme.sizeBody
                                                     font.bold: true
@@ -1030,8 +1385,8 @@ FocusScope {
                                         }
 
                                         Item {
-                                            implicitWidth: accountDescText.implicitWidth + Theme.fontShadowOffset
-                                            implicitHeight: accountDescText.implicitHeight + Theme.fontShadowOffset
+                                            implicitWidth: accountDescText.implicitWidth
+                                            implicitHeight: accountDescText.implicitHeight
 
                                             Text {
                                                 x: Theme.fontShadowOffset
@@ -1043,6 +1398,8 @@ FocusScope {
 
                                             Text {
                                                 id: accountDescText
+                                                x: 0
+                                                y: 0
                                                 text: model.type + " | " + (model.ownsGame ? qsTr("Minecraft Owned") : qsTr("Offline"))
                                                 font.pixelSize: Theme.sizeCaption
                                                 color: Theme.textSecondary
@@ -1155,8 +1512,8 @@ FocusScope {
                                 }
 
                                 Item {
-                                    implicitWidth: breadcrumbText.implicitWidth + Theme.fontShadowOffset
-                                    implicitHeight: breadcrumbText.implicitHeight + Theme.fontShadowOffset
+                                    implicitWidth: breadcrumbText.implicitWidth
+                                    implicitHeight: breadcrumbText.implicitHeight
 
                                     Text {
                                         x: Theme.fontShadowOffset
@@ -1170,6 +1527,8 @@ FocusScope {
 
                                     Text {
                                         id: breadcrumbText
+                                        x: 0
+                                        y: 0
                                         text: skinViewerTab.accountUsername ? (skinViewerTab.accountUsername + " — " + qsTr("Skin Preview")) : qsTr("Skin Preview")
                                         font.family: Theme.fontFamily
                                         font.pixelSize: Theme.sizeBody
@@ -1238,8 +1597,8 @@ FocusScope {
                                         Item {
                                             anchors.centerIn: parent
                                             visible: skinImg.status === Image.Error
-                                            implicitWidth: errorLabelText.implicitWidth + Theme.fontShadowOffset
-                                            implicitHeight: errorLabelText.implicitHeight + Theme.fontShadowOffset
+                                            width: errorLabelText.implicitWidth
+                                            height: errorLabelText.implicitHeight
 
                                             Text {
                                                 x: Theme.fontShadowOffset
@@ -1252,6 +1611,8 @@ FocusScope {
 
                                             Text {
                                                 id: errorLabelText
+                                                x: 0
+                                                y: 0
                                                 text: qsTr("Failed to load skin render")
                                                 font.family: Theme.fontFamily
                                                 font.pixelSize: Theme.sizeSmall
@@ -1266,7 +1627,7 @@ FocusScope {
                                         anchors.left: parent.left
                                         anchors.margins: Theme.space12
                                         height: 24 * Theme.scale
-                                        width: modeTagText.implicitWidth + Theme.space16 + Theme.fontShadowOffset
+                                        width: modeTagText.implicitWidth + Theme.space16
                                         radius: Theme.radiusSm
                                         color: "#B00C0D0E"
                                         border.color: "#40FFFFFF"
@@ -1274,8 +1635,8 @@ FocusScope {
 
                                         Item {
                                             anchors.centerIn: parent
-                                            implicitWidth: modeTagText.implicitWidth + Theme.fontShadowOffset
-                                            implicitHeight: modeTagText.implicitHeight + Theme.fontShadowOffset
+                                            width: modeTagText.implicitWidth
+                                            height: modeTagText.implicitHeight
 
                                             Text {
                                                 x: Theme.fontShadowOffset
@@ -1289,6 +1650,8 @@ FocusScope {
 
                                             Text {
                                                 id: modeTagText
+                                                x: 0
+                                                y: 0
                                                 text: skinViewerTab.viewModes[root.skinViewMode].label.toUpperCase()
                                                 font.family: Theme.fontFamily
                                                 font.pixelSize: Theme.sizeSmall
@@ -1377,8 +1740,8 @@ FocusScope {
                                             spacing: Theme.space8
 
                                             Item {
-                                                implicitWidth: uuidLabelText.implicitWidth + Theme.fontShadowOffset
-                                                implicitHeight: uuidLabelText.implicitHeight + Theme.fontShadowOffset
+                                                implicitWidth: uuidLabelText.implicitWidth
+                                                implicitHeight: uuidLabelText.implicitHeight
 
                                                 Text {
                                                     x: Theme.fontShadowOffset
@@ -1391,6 +1754,8 @@ FocusScope {
 
                                                 Text {
                                                     id: uuidLabelText
+                                                    x: 0
+                                                    y: 0
                                                     text: qsTr("UUID:")
                                                     font.family: Theme.fontFamily
                                                     font.pixelSize: Theme.sizeSmall
@@ -1417,8 +1782,8 @@ FocusScope {
 
                                     // View Mode Selector
                                     Item {
-                                        implicitWidth: camModeText.implicitWidth + Theme.fontShadowOffset
-                                        implicitHeight: camModeText.implicitHeight + Theme.fontShadowOffset
+                                        implicitWidth: camModeText.implicitWidth
+                                        implicitHeight: camModeText.implicitHeight
 
                                         Text {
                                             x: Theme.fontShadowOffset
@@ -1432,6 +1797,8 @@ FocusScope {
 
                                         Text {
                                             id: camModeText
+                                            x: 0
+                                            y: 0
                                             text: qsTr("Camera & Render Mode")
                                             font.family: Theme.fontFamily
                                             font.pixelSize: Theme.sizeSmall
@@ -1470,8 +1837,8 @@ FocusScope {
                                     // Account Switcher (if multiple accounts exist)
                                     Item {
                                         visible: shulkAccounts.count > 1
-                                        implicitWidth: switchAccText.implicitWidth + Theme.fontShadowOffset
-                                        implicitHeight: switchAccText.implicitHeight + Theme.fontShadowOffset
+                                        implicitWidth: switchAccText.implicitWidth
+                                        implicitHeight: switchAccText.implicitHeight
 
                                         Text {
                                             x: Theme.fontShadowOffset
@@ -1485,6 +1852,8 @@ FocusScope {
 
                                         Text {
                                             id: switchAccText
+                                            x: 0
+                                            y: 0
                                             text: qsTr("Switch Account (%1 of %2)").arg(root.skinAccountIndex + 1).arg(shulkAccounts.count)
                                             font.family: Theme.fontFamily
                                             font.pixelSize: Theme.sizeSmall
@@ -1578,31 +1947,46 @@ FocusScope {
                         width: parent.width
                         spacing: Theme.space16
 
-                        Item {
-                            implicitWidth: aboutTitleText.implicitWidth + Theme.fontShadowOffset
-                            implicitHeight: aboutTitleText.implicitHeight + Theme.fontShadowOffset
+                        RowLayout {
+                            spacing: Theme.space12
 
-                            Text {
-                                x: Theme.fontShadowOffset
-                                y: Theme.fontShadowOffset
-                                text: "Shulk"
-                                font.pixelSize: 32 * Theme.scale
-                                font.bold: true
-                                color: Theme.fontShadowDark
+                            Image {
+                                source: "qrc:/shulk/icons/shulk.png"
+                                Layout.preferredWidth: 36 * Theme.scale
+                                Layout.preferredHeight: 36 * Theme.scale
+                                fillMode: Image.PreserveAspectFit
+                                smooth: true
+                                mipmap: true
                             }
 
-                            Text {
-                                id: aboutTitleText
-                                text: "Shulk"
-                                font.pixelSize: 32 * Theme.scale
-                                font.bold: true
-                                color: Theme.textPrimary
+                            Item {
+                                implicitWidth: aboutTitleText.implicitWidth
+                                implicitHeight: aboutTitleText.implicitHeight
+
+                                Text {
+                                    x: Theme.fontShadowOffset
+                                    y: Theme.fontShadowOffset
+                                    text: "Shulk"
+                                    font.pixelSize: 32 * Theme.scale
+                                    font.bold: true
+                                    color: Theme.fontShadowDark
+                                }
+
+                                Text {
+                                    id: aboutTitleText
+                                    x: 0
+                                    y: 0
+                                    text: "Shulk"
+                                    font.pixelSize: 32 * Theme.scale
+                                    font.bold: true
+                                    color: Theme.textPrimary
+                                }
                             }
                         }
 
                         Item {
-                            implicitWidth: aboutSubText.implicitWidth + Theme.fontShadowOffset
-                            implicitHeight: aboutSubText.implicitHeight + Theme.fontShadowOffset
+                            implicitWidth: aboutSubText.implicitWidth
+                            implicitHeight: aboutSubText.implicitHeight
 
                             Text {
                                 x: Theme.fontShadowOffset
@@ -1614,6 +1998,8 @@ FocusScope {
 
                             Text {
                                 id: aboutSubText
+                                x: 0
+                                y: 0
                                 text: qsTr("Handheld Minecraft Java Edition Launcher - Version %1").arg(shulkLauncher.appVersion)
                                 font.pixelSize: Theme.sizeBody
                                 color: Theme.accentPrimary
@@ -1655,8 +2041,8 @@ FocusScope {
                         // Software Updates Section
                         // -----------------------------------------------------
                         Item {
-                            implicitWidth: updateHeaderShulkText.implicitWidth + Theme.fontShadowOffset
-                            implicitHeight: updateHeaderShulkText.implicitHeight + Theme.fontShadowOffset
+                            implicitWidth: updateHeaderShulkText.implicitWidth
+                            implicitHeight: updateHeaderShulkText.implicitHeight
 
                             Text {
                                 x: Theme.fontShadowOffset
@@ -1670,6 +2056,8 @@ FocusScope {
 
                             Text {
                                 id: updateHeaderShulkText
+                                x: 0
+                                y: 0
                                 text: qsTr("Software Updates")
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.sizeHeader
@@ -1818,7 +2206,6 @@ FocusScope {
                                 text: qsTr("Open Source License Attribution:\nShulk is licensed under GPL-3.0-only. Built using the mature C++ backend foundation developed by the Prism Launcher, PolyMC, and MultiMC contributors.\n\nCopyright (C) 2026 Shulk Contributors\nCopyright (C) 2022-2026 Prism Launcher Contributors\nCopyright (C) 2021-2022 PolyMC Contributors\nCopyright (C) 2012-2021 MultiMC Contributors")
                                 font.pixelSize: Theme.sizeCaption
                                 color: Theme.textMuted
-                                wrapMode: Text.WordWrap
                             }
                         }
                     }
@@ -1826,13 +2213,12 @@ FocusScope {
             }
         }
     }
-}
     // =========================================================================
     // CONTROLLER & KEYBOARD NAVIGATION ENGINE
     // =========================================================================
 
     function getMaxRows() {
-        if (root.activeCategory === 0) return 4 // Scale, Blur, Random, Panorama Grid
+        if (root.activeCategory === 0) return 3 // Scale, Blur, Panorama Row
         if (root.activeCategory === 1) return 2 // Glyphs, Actions
         if (root.activeCategory === 2) return 2 // Enable/Disable, Volume Levels
         if (root.activeCategory === 3) return 3 // Max RAM, Min RAM, Advanced
@@ -1848,10 +2234,9 @@ FocusScope {
 
     function getMaxCols(row) {
         if (root.activeCategory === 0) {
-            if (row === 0) return 5 // Auto, 1.0, 1.35, 1.70, 2.0
+            if (row === 0) return 2 // Dropdown button, Choose Random
             if (row === 1) return 4 // Off, Subtle, Medium, Heavy
-            if (row === 2) return 1 // Roll Random
-            if (row === 3) return shulkTheme.availablePanoramas.length // 11
+            if (row === 2) return 5 // Auto, 1.0, 1.35, 1.70, 2.0
         } else if (root.activeCategory === 1) {
             if (row === 0) return 3 // Xbox, Deck, PlayStation
             if (row === 1) return 2 // Haptics, Virtual Keyboard
@@ -1903,19 +2288,22 @@ FocusScope {
         if (root.activeCategory === 0) {
             // Display & Scale
             if (root.itemRow === 0) {
-                var scales = [0.0, 1.0, 1.35, 1.70, 2.0]
-                if (root.itemCol >= 0 && root.itemCol < scales.length) {
-                    shulkTheme.setCustomScale(scales[root.itemCol])
+                // Panorama Selector Dialog & Random
+                if (root.itemCol === 0) {
+                    root.openPanoramaDialogRequested()
+                } else if (root.itemCol === 1) {
+                    shulkTheme.selectRandomPanorama()
                 }
             } else if (root.itemRow === 1) {
+                // Panorama Ambient Blur
                 if (root.itemCol >= 0 && root.itemCol < root.blurPresets.length) {
                     shulkTheme.setPanoramaBlurRadius(root.blurPresets[root.itemCol].val)
                 }
             } else if (root.itemRow === 2) {
-                shulkTheme.selectRandomPanorama()
-            } else if (root.itemRow === 3) {
-                if (root.itemCol >= 0 && root.itemCol < shulkTheme.availablePanoramas.length) {
-                    shulkTheme.setPanorama(shulkTheme.availablePanoramas[root.itemCol].id)
+                // Interface Scaling Presets
+                var scales = [0.0, 1.0, 1.35, 1.70, 2.0]
+                if (root.itemCol >= 0 && root.itemCol < scales.length) {
+                    shulkTheme.setCustomScale(scales[root.itemCol])
                 }
             }
         } else if (root.activeCategory === 1) {
@@ -2055,6 +2443,15 @@ FocusScope {
     }
 
     function handleAction(action) {
+        // Quick Category Switch Triggers (LT / RT)
+        if (action === 15) { // ActionTriggerLeft (LT)
+            root.cycleCategory(-1)
+            return true
+        } else if (action === 16) { // ActionTriggerRight (RT)
+            root.cycleCategory(1)
+            return true
+        }
+
         if (action === Theme.actionBack) {
             if (root.activeCategory === 4 && root.inAccountSkinViewer) {
                 root.inAccountSkinViewer = false
@@ -2067,43 +2464,30 @@ FocusScope {
                 root.focusPane = 0
                 if (typeof shulkSound !== "undefined") shulkSound.playDismiss()
                 return true
+            } else {
+                root.enterTopBarRequested()
+                if (typeof shulkSound !== "undefined") shulkSound.playDismiss()
+                return true
             }
-            return false
         }
 
         if (root.focusPane === 0) {
-            // SIDEBAR NAVIGATION
-            if (action === Theme.actionUp) {
-                var nextUp = root.activeCategory - 1
-                while (nextUp >= 0 && root.categories[nextUp].disabled) {
-                    nextUp--
-                }
-                if (nextUp >= 0) {
-                    root.activeCategory = nextUp
-                    root.itemRow = 0
-                    root.itemCol = 0
-                    if (typeof shulkSound !== "undefined") shulkSound.playTick()
-                }
+            // CATEGORY TABS NAVIGATION
+            if (action === Theme.actionLeft) {
+                root.cycleCategory(-1)
                 return true
-            } else if (action === Theme.actionDown) {
-                var nextDown = root.activeCategory + 1
-                while (nextDown < root.categories.length && root.categories[nextDown].disabled) {
-                    nextDown++
-                }
-                if (nextDown < root.categories.length) {
-                    root.activeCategory = nextDown
-                    root.itemRow = 0
-                    root.itemCol = 0
-                    if (typeof shulkSound !== "undefined") shulkSound.playTick()
-                }
+            } else if (action === Theme.actionRight) {
+                root.cycleCategory(1)
                 return true
-            } else if (action === Theme.actionRight || action === Theme.actionAccept) {
-                if (!root.categories[root.activeCategory].disabled) {
-                    root.focusPane = 1
-                    root.itemRow = 0
-                    root.itemCol = 0
-                    if (typeof shulkSound !== "undefined") shulkSound.playClick()
-                }
+            } else if (action === Theme.actionDown || action === Theme.actionAccept) {
+                root.focusPane = 1
+                root.itemRow = 0
+                root.itemCol = 0
+                if (typeof shulkSound !== "undefined") shulkSound.playClick()
+                return true
+            } else if (action === Theme.actionUp) {
+                root.enterTopBarRequested()
+                if (typeof shulkSound !== "undefined") shulkSound.playFocus()
                 return true
             }
         } else {
@@ -2116,6 +2500,12 @@ FocusScope {
                     root.itemRow--
                     root.itemCol = Math.min(root.itemCol, getMaxCols(root.itemRow) - 1)
                     if (typeof shulkSound !== "undefined") shulkSound.playTick()
+                } else {
+                    // Up from top row of content returns to category tabs (unless in skin viewer)
+                    if (!(root.activeCategory === 4 && root.inAccountSkinViewer)) {
+                        root.focusPane = 0
+                        if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+                    }
                 }
                 return true
             } else if (action === Theme.actionDown) {
@@ -2134,10 +2524,6 @@ FocusScope {
                         root.inAccountSkinViewer = false
                         root.itemRow = root.skinAccountIndex + 1
                         root.itemCol = 0
-                        if (typeof shulkSound !== "undefined") shulkSound.playClick()
-                    } else {
-                        // Return to category sidebar
-                        root.focusPane = 0
                         if (typeof shulkSound !== "undefined") shulkSound.playClick()
                     }
                 }
@@ -2164,4 +2550,5 @@ FocusScope {
         }
         return false
     }
+
 }

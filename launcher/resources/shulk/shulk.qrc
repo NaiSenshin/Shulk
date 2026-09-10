@@ -19,6 +19,7 @@
         <file>qml/dialogs/ShulkSortFilterDialog.qml</file>
         <file>qml/dialogs/ShulkCreateProfileDialog.qml</file>
         <file>qml/dialogs/ShulkAddAccountDialog.qml</file>
+        <file>qml/dialogs/ShulkPanoramaDialog.qml</file>
         <file>qml/views/HomeView.qml</file>
         <file>qml/views/LibraryView.qml</file>
         <file>qml/views/ProfileDetailView.qml</file>
@@ -41,6 +42,7 @@
         <file>sounds/navigate.wav</file>
         <file>sounds/confirm.wav</file>
         <file>sounds/launch.wav</file>
+        <file>sounds/levelup.wav</file>
         <file>sounds/success.wav</file>
         <file>sounds/open.wav</file>
         <file>sounds/back.wav</file>

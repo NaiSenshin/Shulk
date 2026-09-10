@@ -109,12 +109,32 @@ FocusScope {
                     border.color: closeMouse.containsMouse ? Theme.borderFocused : Theme.borderSubtle
                     border.width: 1
 
-                    Text {
+                    Item {
+                        readonly property int closeOffset: Theme.getShadowOffset(14 * Theme.scale)
                         anchors.centerIn: parent
-                        text: "X"
-                        font.pixelSize: 14 * Theme.scale
-                        font.bold: true
-                        color: "#FFFFFF"
+                        width: closeLabel.implicitWidth
+                        height: closeLabel.implicitHeight
+
+                        Text {
+                            x: parent.closeOffset
+                            y: parent.closeOffset
+                            text: "X"
+                            font.family: Theme.fontDisplay
+                            font.pixelSize: 14 * Theme.scale
+                            font.bold: true
+                            color: Theme.getShadowColor(closeLabel.color)
+                        }
+
+                        Text {
+                            id: closeLabel
+                            x: 0
+                            y: 0
+                            text: "X"
+                            font.family: Theme.fontDisplay
+                            font.pixelSize: 14 * Theme.scale
+                            font.bold: true
+                            color: closeMouse.containsMouse ? "#FFFFAA" : "#FFFFFF"
+                        }
                     }
 
                     MouseArea {

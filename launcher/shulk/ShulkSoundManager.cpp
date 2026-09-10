@@ -8,6 +8,7 @@
 #include <SDL2/SDL.h>
 #include <QFile>
 #include <QDebug>
+#include <QDateTime>
 #include <QtEndian>
 #include <algorithm>
 
@@ -122,9 +123,14 @@ void ShulkSoundManager::loadSounds()
         m_soundBuffers.insert(SoundLaunch, launch);
     }
 
+    QByteArray levelup = loadWavResource(":/shulk/sounds/levelup.wav");
+    if (!levelup.isEmpty()) {
+        m_soundBuffers.insert(SoundLevelUp, levelup);
+    }
+
     QByteArray success = loadWavResource(":/shulk/sounds/success.wav");
     if (!success.isEmpty()) {
-        m_soundBuffers.insert(SoundLevelUp, success);
+        m_soundBuffers.insert(SoundChallenge, success);
     }
 
     QByteArray open = loadWavResource(":/shulk/sounds/open.wav");
@@ -151,6 +157,12 @@ void ShulkSoundManager::playPcmBuffer(const QByteArray& pcm)
         return;
     }
 
+    qint64 now = QDateTime::currentMSecsSinceEpoch();
+    // Do not clear the queue if an achievement fanfare is currently playing
+    if (now >= m_achievementEndTime) {
+        SDL_ClearQueuedAudio(m_audioDeviceId);
+    }
+
     // Scale by volume
     QByteArray scaled(pcm);
     int16_t* samples = reinterpret_cast<int16_t*>(scaled.data());
@@ -161,7 +173,6 @@ void ShulkSoundManager::playPcmBuffer(const QByteArray& pcm)
         samples[i] = (int16_t)(samples[i] * gain);
     }
 
-    SDL_ClearQueuedAudio(m_audioDeviceId);
     SDL_QueueAudio(m_audioDeviceId, scaled.constData(), scaled.size());
 }
 
@@ -200,6 +211,44 @@ void ShulkSoundManager::playOpen()
 void ShulkSoundManager::playLevelUp()
 {
     playSound(SoundLevelUp);
+}
+
+void ShulkSoundManager::playChallenge()
+{
+    playSound(SoundChallenge);
+}
+
+void ShulkSoundManager::playAchievement()
+{
+    // Play the classic Minecraft achievement chime (levelup.wav), fallback to challenge
+    SoundType type = m_soundBuffers.contains(SoundLevelUp) ? SoundLevelUp : SoundChallenge;
+    if (!m_soundBuffers.contains(type)) {
+        return;
+    }
+
+    const QByteArray& pcm = m_soundBuffers.value(type);
+    if (!m_audioReady || !m_soundEnabled || m_volume <= 0 || pcm.isEmpty()) {
+        return;
+    }
+
+    // Clear any prior clicks and play achievement immediately
+    SDL_ClearQueuedAudio(m_audioDeviceId);
+
+    QByteArray scaled(pcm);
+    int16_t* samples = reinterpret_cast<int16_t*>(scaled.data());
+    int numSamples = scaled.size() / sizeof(int16_t);
+    float gain = (float)m_volume / 100.0f;
+
+    for (int i = 0; i < numSamples; ++i) {
+        samples[i] = (int16_t)(samples[i] * gain);
+    }
+
+    SDL_QueueAudio(m_audioDeviceId, scaled.constData(), scaled.size());
+
+    // Calculate duration in ms: 44100 Hz, 16-bit mono = 88200 bytes per second
+    qint64 durationMs = (pcm.size() * 1000LL) / (SAMPLE_RATE * (int)sizeof(int16_t));
+    m_achievementEndTime = QDateTime::currentMSecsSinceEpoch() + durationMs + 200;
+    qDebug() << "ShulkSoundManager: Playing achievement sound, duration:" << durationMs << "ms";
 }
 
 void ShulkSoundManager::playError()

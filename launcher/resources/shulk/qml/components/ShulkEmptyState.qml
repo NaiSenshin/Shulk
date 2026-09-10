@@ -36,23 +36,55 @@ Item {
             }
         }
 
-        Text {
+        Item {
             Layout.alignment: Qt.AlignHCenter
-            text: root.title
-            font.pixelSize: Theme.sizeTitle
-            font.bold: true
-            color: Theme.textPrimary
-            horizontalAlignment: Text.AlignHCenter
+            implicitWidth: emptyTitle.implicitWidth
+            implicitHeight: emptyTitle.implicitHeight
+            readonly property int off: Theme.getShadowOffset(emptyTitle.font.pixelSize)
+
+            Text {
+                x: parent.off; y: parent.off
+                text: emptyTitle.text
+                font: emptyTitle.font
+                color: Theme.getShadowColor(emptyTitle.color)
+            }
+            Text {
+                id: emptyTitle
+                x: 0; y: 0
+                text: root.title
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.sizeTitle
+                font.bold: true
+                color: Theme.textPrimary
+            }
         }
 
-        Text {
+        Item {
             Layout.alignment: Qt.AlignHCenter
             Layout.fillWidth: true
-            text: root.description
-            font.pixelSize: Theme.sizeBody
-            color: Theme.textSecondary
-            wrapMode: Text.WordWrap
-            horizontalAlignment: Text.AlignHCenter
+            implicitHeight: emptyDesc.implicitHeight
+            readonly property int off: Theme.getShadowOffset(emptyDesc.font.pixelSize)
+
+            Text {
+                x: parent.off; y: parent.off
+                width: parent.width
+                text: emptyDesc.text
+                font: emptyDesc.font
+                color: Theme.getShadowColor(emptyDesc.color)
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+            }
+            Text {
+                id: emptyDesc
+                x: 0; y: 0
+                width: parent.width
+                text: root.description
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.sizeBody
+                color: Theme.textSecondary
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+            }
         }
 
         ShulkButton {

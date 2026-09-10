@@ -87,6 +87,7 @@ signals:
     void applicationActiveChanged();
     void actionTriggered(LogicalAction action);
     void actionReleased(LogicalAction action);
+    void konamiCodeTriggered();
 
 private slots:
     void pollGamepadEvents();
@@ -99,6 +100,7 @@ private:
     void handleButtonEvent(int button, bool pressed);
     void handleAxisEvent(int axis, int value);
     void dispatchKeyToQt(int key, bool pressed = true);
+    bool checkKonamiCode(LogicalAction action, int rawKey = 0);
 
     QPointer<QWindow> m_targetWindow;
     InputMode m_inputMode = Controller;
@@ -114,4 +116,8 @@ private:
     bool m_triggerLeftActive = false;
     bool m_triggerRightActive = false;
     qint64 m_lastAxisRepeatTime = 0;
+
+    // Easter Egg / Konami Code tracking
+    int m_konamiStep = 0;
+    qint64 m_lastKonamiTime = 0;
 };

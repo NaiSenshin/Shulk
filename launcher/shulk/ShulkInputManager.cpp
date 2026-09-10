@@ -244,6 +244,10 @@ void ShulkInputManager::handleButtonEvent(int button, bool pressed)
 
     if (pressed) {
         if (action != ActionNone) {
+            bool triggered = checkKonamiCode(action, 0);
+            if (triggered) {
+                return;
+            }
             emit actionTriggered(action);
         }
     } else {
@@ -266,6 +270,7 @@ void ShulkInputManager::handleAxisEvent(int axis, int value)
             setInputMode(Controller);
             m_stickLeftActive = true;
             m_lastAxisRepeatTime = now;
+            checkKonamiCode(ActionNavigateLeft, 0);
             emit actionTriggered(ActionNavigateLeft);
         } else if (!left) {
             m_stickLeftActive = false;
@@ -275,6 +280,7 @@ void ShulkInputManager::handleAxisEvent(int axis, int value)
             setInputMode(Controller);
             m_stickRightActive = true;
             m_lastAxisRepeatTime = now;
+            checkKonamiCode(ActionNavigateRight, 0);
             emit actionTriggered(ActionNavigateRight);
         } else if (!right) {
             m_stickRightActive = false;
@@ -287,6 +293,7 @@ void ShulkInputManager::handleAxisEvent(int axis, int value)
             setInputMode(Controller);
             m_stickUpActive = true;
             m_lastAxisRepeatTime = now;
+            checkKonamiCode(ActionNavigateUp, 0);
             emit actionTriggered(ActionNavigateUp);
         } else if (!up) {
             m_stickUpActive = false;
@@ -296,6 +303,7 @@ void ShulkInputManager::handleAxisEvent(int axis, int value)
             setInputMode(Controller);
             m_stickDownActive = true;
             m_lastAxisRepeatTime = now;
+            checkKonamiCode(ActionNavigateDown, 0);
             emit actionTriggered(ActionNavigateDown);
         } else if (!down) {
             m_stickDownActive = false;
@@ -348,6 +356,7 @@ ShulkInputManager::LogicalAction ShulkInputManager::mapKeyToAction(int key, int 
         case Qt::Key_Escape:
         case Qt::Key_Back:
         case Qt::Key_Backspace:
+        case Qt::Key_B:
             return ActionBack;
         case Qt::Key_X:
         case Qt::Key_P:
@@ -376,11 +385,71 @@ ShulkInputManager::LogicalAction ShulkInputManager::mapKeyToAction(int key, int 
     }
 }
 
+bool ShulkInputManager::checkKonamiCode(LogicalAction action, int rawKey)
+{
+    qint64 now = QDateTime::currentMSecsSinceEpoch();
+    if (m_lastKonamiTime > 0 && (now - m_lastKonamiTime > 4000)) {
+        m_konamiStep = 0;
+    }
+    m_lastKonamiTime = now;
+
+    bool match = false;
+    switch (m_konamiStep) {
+        case 0: // Up
+        case 2: // Up
+            if (action == ActionNavigateUp || rawKey == Qt::Key_Up) match = true;
+            break;
+        case 1: // Down
+        case 3: // Down
+            if (action == ActionNavigateDown || rawKey == Qt::Key_Down) match = true;
+            break;
+        case 4: // Left
+        case 6: // Left
+            if (action == ActionNavigateLeft || rawKey == Qt::Key_Left) match = true;
+            break;
+        case 5: // Right
+        case 7: // Right
+            if (action == ActionNavigateRight || rawKey == Qt::Key_Right) match = true;
+            break;
+        case 8: // B
+            if (action == ActionBack || rawKey == Qt::Key_B) match = true;
+            break;
+        case 9: // A
+            if (action == ActionAccept || rawKey == Qt::Key_A) match = true;
+            break;
+        default:
+            break;
+    }
+
+    if (match) {
+        m_konamiStep++;
+        if (m_konamiStep == 10) {
+            m_konamiStep = 0;
+            qDebug() << "Shulk: Konami Code easter egg activated!";
+            emit konamiCodeTriggered();
+            return true;
+        }
+        return false;
+    } else {
+        // If the mismatched input is "Up", reset to step 1 (starting a new sequence)
+        if (action == ActionNavigateUp || rawKey == Qt::Key_Up) {
+            m_konamiStep = 1;
+        } else {
+            m_konamiStep = 0;
+        }
+        return false;
+    }
+}
+
 void ShulkInputManager::notifyKeyPressed(int key, int modifiers)
 {
     // Only map keyboard events when input mode is keyboard
     setInputMode(Keyboard);
     auto action = mapKeyToAction(key, modifiers);
+    bool triggered = checkKonamiCode(action, key);
+    if (triggered) {
+        return; // Consume the trigger key
+    }
     if (action != ActionNone) {
         emit actionTriggered(action);
     }

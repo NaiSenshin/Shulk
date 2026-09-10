@@ -31,9 +31,28 @@ static const QList<PanoramaInfo> OFFICIAL_PANORAMAS = {
     { "tricky_trials",  "Tricky Trials (1.21)",      "1.21" }
 };
 
+static const QList<PanoramaInfo> CONSOLE_PANORAMAS = {
+    { "console_tu1",   "Console TU1 (Xbox 360)",       "TU1" },
+    { "console_tu5",   "Console TU5 (Nether/Pistons)", "TU5" },
+    { "console_tu12",  "Console TU12 (Redstone)",      "TU12" },
+    { "console_tu19",  "Console TU19 (Horses)",        "TU19" },
+    { "console_tu31",  "Console TU31 (Monuments)",     "TU31" },
+    { "console_tu46",  "Console TU46 (Bears/Fossils)", "TU46" },
+    { "console_tu69",  "Console TU69 (Legacy Finale)", "TU69" }
+};
+
 ShulkTheme::ShulkTheme(QObject* parent) : QObject(parent)
 {
     loadSettings();
+}
+
+QList<PanoramaInfo> ShulkTheme::currentPanoramaList() const
+{
+    QList<PanoramaInfo> list = OFFICIAL_PANORAMAS;
+    if (m_consolePanoramasUnlocked) {
+        list.append(CONSOLE_PANORAMAS);
+    }
+    return list;
 }
 
 void ShulkTheme::loadSettings()
@@ -43,6 +62,7 @@ void ShulkTheme::loadSettings()
     m_controllerType = settings.value("Theme/ControllerType", "xbox").toString();
     m_panoramaSetting = settings.value("Theme/Panorama", "random").toString();
     m_panoramaBlurRadius = settings.value("Theme/PanoramaBlurRadius", 14).toInt();
+    m_consolePanoramasUnlocked = settings.value("Theme/ConsolePanoramasUnlocked", false).toBool();
     pickActivePanorama();
 
     QDir dir(":/shulk/panoramas");
@@ -61,6 +81,29 @@ void ShulkTheme::saveSettings()
     settings.setValue("Theme/ControllerType", m_controllerType);
     settings.setValue("Theme/Panorama", m_panoramaSetting);
     settings.setValue("Theme/PanoramaBlurRadius", m_panoramaBlurRadius);
+    settings.setValue("Theme/ConsolePanoramasUnlocked", m_consolePanoramasUnlocked);
+}
+
+bool ShulkTheme::unlockConsolePanoramas()
+{
+    if (!m_consolePanoramasUnlocked) {
+        m_consolePanoramasUnlocked = true;
+        saveSettings();
+        emit consolePanoramasUnlockedChanged();
+        emit panoramaChanged();
+        return true;
+    }
+    return false;
+}
+
+void ShulkTheme::lockConsolePanoramas()
+{
+    if (m_consolePanoramasUnlocked) {
+        m_consolePanoramasUnlocked = false;
+        saveSettings();
+        emit consolePanoramasUnlockedChanged();
+        emit panoramaChanged();
+    }
 }
 
 void ShulkTheme::setPanoramaBlurRadius(int radius)
@@ -75,12 +118,13 @@ void ShulkTheme::setPanoramaBlurRadius(int radius)
 
 void ShulkTheme::pickActivePanorama()
 {
+    const auto list = currentPanoramaList();
     if (m_panoramaSetting == "random" || m_panoramaSetting.isEmpty()) {
-        m_activePanoramaIndex = QRandomGenerator::global()->bounded(OFFICIAL_PANORAMAS.size());
+        m_activePanoramaIndex = QRandomGenerator::global()->bounded(list.size());
     } else {
         m_activePanoramaIndex = 0;
-        for (int i = 0; i < OFFICIAL_PANORAMAS.size(); ++i) {
-            if (OFFICIAL_PANORAMAS[i].id == m_panoramaSetting) {
+        for (int i = 0; i < list.size(); ++i) {
+            if (list[i].id == m_panoramaSetting) {
                 m_activePanoramaIndex = i;
                 break;
             }
@@ -100,10 +144,11 @@ void ShulkTheme::setPanoramaSetting(const QString& setting)
 
 void ShulkTheme::selectRandomPanorama()
 {
-    if (OFFICIAL_PANORAMAS.size() > 1) {
+    const auto list = currentPanoramaList();
+    if (list.size() > 1) {
         int next = m_activePanoramaIndex;
         while (next == m_activePanoramaIndex) {
-            next = QRandomGenerator::global()->bounded(OFFICIAL_PANORAMAS.size());
+            next = QRandomGenerator::global()->bounded(list.size());
         }
         m_activePanoramaIndex = next;
     }
@@ -112,14 +157,18 @@ void ShulkTheme::selectRandomPanorama()
 
 void ShulkTheme::nextPanorama()
 {
-    m_activePanoramaIndex = (m_activePanoramaIndex + 1) % OFFICIAL_PANORAMAS.size();
-    emit panoramaChanged();
+    const auto list = currentPanoramaList();
+    if (!list.isEmpty()) {
+        m_activePanoramaIndex = (m_activePanoramaIndex + 1) % list.size();
+        emit panoramaChanged();
+    }
 }
 
 QString ShulkTheme::activePanoramaId() const
 {
-    if (m_activePanoramaIndex >= 0 && m_activePanoramaIndex < OFFICIAL_PANORAMAS.size()) {
-        return OFFICIAL_PANORAMAS[m_activePanoramaIndex].id;
+    const auto list = currentPanoramaList();
+    if (m_activePanoramaIndex >= 0 && m_activePanoramaIndex < list.size()) {
+        return list[m_activePanoramaIndex].id;
     }
     return "classic";
 }
@@ -136,8 +185,9 @@ QString ShulkTheme::panoramaPreviewUrl() const
 
 QString ShulkTheme::panoramaTitle() const
 {
-    if (m_activePanoramaIndex >= 0 && m_activePanoramaIndex < OFFICIAL_PANORAMAS.size()) {
-        return OFFICIAL_PANORAMAS[m_activePanoramaIndex].title;
+    const auto list = currentPanoramaList();
+    if (m_activePanoramaIndex >= 0 && m_activePanoramaIndex < list.size()) {
+        return list[m_activePanoramaIndex].title;
     }
     return "Minecraft Panorama";
 }
@@ -150,6 +200,7 @@ QVariantList ShulkTheme::availablePanoramas() const
     randMap["title"] = "Random (Every Launch)";
     randMap["updateName"] = "Shuffle";
     randMap["previewUrl"] = "";
+    randMap["isConsole"] = false;
     list.append(randMap);
 
     for (const auto& p : OFFICIAL_PANORAMAS) {
@@ -158,7 +209,20 @@ QVariantList ShulkTheme::availablePanoramas() const
         map["title"] = p.title;
         map["updateName"] = p.updateName;
         map["previewUrl"] = QString("qrc:/shulk/panoramas/%1_preview.png").arg(p.id);
+        map["isConsole"] = false;
         list.append(map);
+    }
+
+    if (m_consolePanoramasUnlocked) {
+        for (const auto& p : CONSOLE_PANORAMAS) {
+            QVariantMap map;
+            map["id"] = p.id;
+            map["title"] = p.title;
+            map["updateName"] = p.updateName;
+            map["previewUrl"] = QString("qrc:/shulk/panoramas/%1_preview.png").arg(p.id);
+            map["isConsole"] = true;
+            list.append(map);
+        }
     }
     return list;
 }

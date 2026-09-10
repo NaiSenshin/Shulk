@@ -18,6 +18,7 @@ class ShulkTheme;
 class ShulkInputManager;
 class ShulkCreationService;
 class ShulkSoundManager;
+class ShulkRecentServerModel;
 
 class ShulkWindow : public QObject {
     Q_OBJECT
@@ -50,5 +51,6 @@ private:
     std::unique_ptr<ShulkInputManager> m_inputManager;
     std::unique_ptr<ShulkCreationService> m_creationService;
     std::unique_ptr<ShulkSoundManager> m_soundManager;
+    std::unique_ptr<ShulkRecentServerModel> m_recentServerModel;
     bool m_wasFullScreen = false;
 };

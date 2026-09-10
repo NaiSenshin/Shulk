@@ -24,7 +24,8 @@ class ShulkTheme : public QObject {
     Q_PROPERTY(QString panoramaCubeUrl READ panoramaCubeUrl NOTIFY panoramaChanged)
     Q_PROPERTY(QString panoramaPreviewUrl READ panoramaPreviewUrl NOTIFY panoramaChanged)
     Q_PROPERTY(QString panoramaTitle READ panoramaTitle NOTIFY panoramaChanged)
-    Q_PROPERTY(QVariantList availablePanoramas READ availablePanoramas CONSTANT)
+    Q_PROPERTY(QVariantList availablePanoramas READ availablePanoramas NOTIFY panoramaChanged)
+    Q_PROPERTY(bool consolePanoramasUnlocked READ consolePanoramasUnlocked NOTIFY consolePanoramasUnlockedChanged)
     Q_PROPERTY(int panoramaBlurRadius READ panoramaBlurRadius WRITE setPanoramaBlurRadius NOTIFY panoramaBlurRadiusChanged)
 
 public:
@@ -57,6 +58,10 @@ public:
     QString panoramaTitle() const;
     QVariantList availablePanoramas() const;
 
+    bool consolePanoramasUnlocked() const { return m_consolePanoramasUnlocked; }
+    Q_INVOKABLE bool unlockConsolePanoramas();
+    Q_INVOKABLE void lockConsolePanoramas();
+
     Q_INVOKABLE void selectRandomPanorama();
     Q_INVOKABLE void nextPanorama();
 
@@ -71,12 +76,14 @@ signals:
     void screenSizeChanged();
     void panoramaChanged();
     void panoramaBlurRadiusChanged();
+    void consolePanoramasUnlockedChanged();
 
 private:
     void loadSettings();
     void saveSettings();
     void recomputeScaleFactor();
     void pickActivePanorama();
+    QList<struct PanoramaInfo> currentPanoramaList() const;
 
     qreal m_scaleFactor = 1.0;
     qreal m_customScaleFactor = 0.0; // 0.0 = Auto
@@ -88,4 +95,5 @@ private:
     QString m_panoramaSetting = "random"; // "random" or specific id
     int m_activePanoramaIndex = 0;
     int m_panoramaBlurRadius = 14;
+    bool m_consolePanoramasUnlocked = false;
 };

@@ -804,6 +804,9 @@ SET(LAUNCHER_SOURCES
     shulk/ShulkPanoramaItem.h
     shulk/ShulkPanoramaItem.cpp
     shulk/ShulkIconProvider.h
+    shulk/ShulkServerIconProvider.h
+    shulk/ShulkRecentServerModel.h
+    shulk/ShulkRecentServerModel.cpp
 
     # Application base
     Application.h

@@ -162,6 +162,7 @@ void ShulkModListModel::refresh()
 {
     beginResetModel();
     m_items.clear();
+    const int currentGen = ++m_refreshGen;
 
     if (m_instance) {
         QString modsPath = m_instance->modsRoot();
@@ -172,7 +173,7 @@ void ShulkModListModel::refresh()
             nameFilters << "*.jar" << "*.jar.disabled";
             QFileInfoList fileList = modsDir.entryInfoList(nameFilters, QDir::Files, QDir::Name | QDir::IgnoreCase);
 
-            // Optional: query Prism's loaderModList if it is already populated
+            // Query Prism's loaderModList if it is already populated in memory
             auto prismList = m_instance->loaderModList();
             QMap<QString, const Mod*> prismModMap;
             if (prismList) {
@@ -185,56 +186,96 @@ void ShulkModListModel::refresh()
                 }
             }
 
-            for (const auto& fileInfo : fileList) {
+            struct AsyncModTask {
+                int row;
+                QFileInfo fileInfo;
+            };
+            QList<AsyncModTask> pendingInspection;
+
+            for (int i = 0; i < fileList.size(); ++i) {
+                const auto& fileInfo = fileList[i];
                 ModItem item;
                 item.fileName = fileInfo.fileName();
                 item.filePath = fileInfo.absoluteFilePath();
                 item.fileSize = formatFileSize(fileInfo.size());
                 item.enabled = !item.fileName.endsWith(".disabled", Qt::CaseInsensitive);
 
-                // If Prism's parsed mod info is available, use it!
                 QString baseFileName = item.fileName;
                 if (baseFileName.endsWith(".disabled", Qt::CaseInsensitive)) {
                     baseFileName.chop(9); // remove .disabled
                 }
 
+                // Smart filename parsing for clean display name and version
+                QString cleanName = baseFileName;
+                if (cleanName.endsWith(".jar", Qt::CaseInsensitive)) {
+                    cleanName.chop(4);
+                }
+
+                // Extract version pattern (e.g. name-1.2.3+fabric -> name, 1.2.3+fabric)
+                static QRegularExpression verRegex(R"([-_\+](v?\d+(\.\d+)+.*)$)", QRegularExpression::CaseInsensitiveOption);
+                auto match = verRegex.match(cleanName);
+                if (match.hasMatch()) {
+                    item.version = match.captured(1);
+                    cleanName = cleanName.left(match.capturedStart());
+                }
+
+                // Capitalize hyphenated words nicely
+                QStringList parts = cleanName.split(QRegularExpression("[-_]"), Qt::SkipEmptyParts);
+                for (auto& p : parts) {
+                    if (!p.isEmpty()) {
+                        p[0] = p[0].toUpper();
+                    }
+                }
+                item.name = parts.join(" ");
+                if (item.name.isEmpty()) item.name = baseFileName;
+
+                // If Prism's parsed mod info is already available in memory, use it immediately!
                 if (prismModMap.contains(item.fileName) || prismModMap.contains(baseFileName)) {
                     const auto* mod = prismModMap.contains(item.fileName) ? prismModMap.value(item.fileName) : prismModMap.value(baseFileName);
-                    item.name = mod->name().isEmpty() ? baseFileName : mod->name();
-                    item.version = mod->version();
-                    item.description = mod->description();
-                    item.iconUrl = modIconDataUrl(*mod);
+                    if (mod) {
+                        if (!mod->name().isEmpty()) item.name = mod->name();
+                        if (!mod->version().isEmpty()) item.version = mod->version();
+                        item.description = mod->description();
+                        item.iconUrl = modIconDataUrl(*mod);
+                    }
                 } else {
-                    Mod parsedMod(fileInfo);
-                    if (ModUtils::process(parsedMod))
-                        item.iconUrl = modIconDataUrl(parsedMod);
-
-                    // Smart filename parsing for clean display name and version
-                    QString cleanName = baseFileName;
-                    if (cleanName.endsWith(".jar", Qt::CaseInsensitive)) {
-                        cleanName.chop(4);
-                    }
-
-                    // Extract version pattern (e.g. name-1.2.3+fabric -> name, 1.2.3+fabric)
-                    static QRegularExpression verRegex(R"([-_\+](v?\d+(\.\d+)+.*)$)", QRegularExpression::CaseInsensitiveOption);
-                    auto match = verRegex.match(cleanName);
-                    if (match.hasMatch()) {
-                        item.version = match.captured(1);
-                        cleanName = cleanName.left(match.capturedStart());
-                    }
-
-                    // Capitalize hyphenated words nicely
-                    QStringList parts = cleanName.split(QRegularExpression("[-_]"), Qt::SkipEmptyParts);
-                    for (auto& p : parts) {
-                        if (!p.isEmpty()) {
-                            p[0] = p[0].toUpper();
-                        }
-                    }
-                    item.name = parts.join(" ");
-                    if (item.name.isEmpty()) item.name = baseFileName;
+                    // Queue for background deep inspection so GUI thread never blocks unzipping jars
+                    pendingInspection.append({ i, fileInfo });
                 }
 
                 m_items.append(item);
+            }
+
+            // Offload zip inspection to background thread pool
+            for (const auto& task : pendingInspection) {
+                const int row = task.row;
+                const QFileInfo fi = task.fileInfo;
+                QThreadPool::globalInstance()->start([this, currentGen, row, fi]() {
+                    Mod parsedMod(fi);
+                    QString iconUrl;
+                    QString parsedName;
+                    QString parsedVer;
+                    QString parsedDesc;
+
+                    if (ModUtils::process(parsedMod, ModUtils::ProcessingLevel::BasicInfoOnly)) {
+                        if (!parsedMod.name().isEmpty()) parsedName = parsedMod.name();
+                        if (!parsedMod.version().isEmpty()) parsedVer = parsedMod.version();
+                        parsedDesc = parsedMod.description();
+                        iconUrl = modIconDataUrl(parsedMod);
+                    }
+
+                    if (!iconUrl.isEmpty() || !parsedName.isEmpty()) {
+                        QMetaObject::invokeMethod(this, [this, currentGen, row, iconUrl, parsedName, parsedVer, parsedDesc]() {
+                            if (currentGen == m_refreshGen && row >= 0 && row < m_items.size()) {
+                                if (!parsedName.isEmpty()) m_items[row].name = parsedName;
+                                if (!parsedVer.isEmpty()) m_items[row].version = parsedVer;
+                                if (!parsedDesc.isEmpty()) m_items[row].description = parsedDesc;
+                                if (!iconUrl.isEmpty()) m_items[row].iconUrl = iconUrl;
+                                emit dataChanged(index(row, 0), index(row, 0), {NameRole, VersionRole, DescriptionRole, IconUrlRole});
+                            }
+                        }, Qt::QueuedConnection);
+                    }
+                });
             }
         }
 
@@ -348,6 +389,7 @@ void ShulkResourcePackListModel::refresh()
 {
     beginResetModel();
     m_items.clear();
+    const int currentGen = ++m_refreshGen;
 
     if (m_instance) {
         QString packsPath = m_instance->resourcePacksDir();
@@ -355,6 +397,12 @@ void ShulkResourcePackListModel::refresh()
 
         if (dir.exists()) {
             QFileInfoList list = dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name | QDir::IgnoreCase);
+
+            struct AsyncPackTask {
+                int row;
+                QFileInfo fi;
+            };
+            QList<AsyncPackTask> pendingIcons;
 
             for (const auto& fi : list) {
                 QString fn = fi.fileName();
@@ -371,9 +419,26 @@ void ShulkResourcePackListModel::refresh()
                 if (clean.endsWith(".disabled", Qt::CaseInsensitive)) clean.chop(9);
                 if (clean.endsWith(".zip", Qt::CaseInsensitive)) clean.chop(4);
                 item.name = clean;
-                item.iconUrl = embeddedPackIcon(fi, { "pack.png" });
 
+                const int row = m_items.size();
+                pendingIcons.append({ row, fi });
                 m_items.append(item);
+            }
+
+            for (const auto& task : pendingIcons) {
+                const int row = task.row;
+                const QFileInfo fi = task.fi;
+                QThreadPool::globalInstance()->start([this, currentGen, row, fi]() {
+                    const QString iconUrl = embeddedPackIcon(fi, { "pack.png" });
+                    if (!iconUrl.isEmpty()) {
+                        QMetaObject::invokeMethod(this, [this, currentGen, row, iconUrl]() {
+                            if (currentGen == m_refreshGen && row >= 0 && row < m_items.size()) {
+                                m_items[row].iconUrl = iconUrl;
+                                emit dataChanged(index(row, 0), index(row, 0), {IconUrlRole});
+                            }
+                        }, Qt::QueuedConnection);
+                    }
+                });
             }
         }
 
@@ -482,6 +547,7 @@ void ShulkShaderListModel::refresh()
 {
     beginResetModel();
     m_items.clear();
+    const int currentGen = ++m_refreshGen;
 
     if (m_instance) {
         QString shadersPath = m_instance->shaderPacksDir();
@@ -489,6 +555,12 @@ void ShulkShaderListModel::refresh()
 
         if (dir.exists()) {
             QFileInfoList list = dir.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name | QDir::IgnoreCase);
+
+            struct AsyncShaderTask {
+                int row;
+                QFileInfo fi;
+            };
+            QList<AsyncShaderTask> pendingIcons;
 
             for (const auto& fi : list) {
                 QString fn = fi.fileName();
@@ -503,9 +575,26 @@ void ShulkShaderListModel::refresh()
                 QString clean = fn;
                 if (clean.endsWith(".zip", Qt::CaseInsensitive)) clean.chop(4);
                 item.name = clean;
-                item.iconUrl = embeddedPackIcon(fi, { "icon.png", "pack.png", "preview.png", "thumbnail.png", "screenshot.png" });
 
+                const int row = m_items.size();
+                pendingIcons.append({ row, fi });
                 m_items.append(item);
+            }
+
+            for (const auto& task : pendingIcons) {
+                const int row = task.row;
+                const QFileInfo fi = task.fi;
+                QThreadPool::globalInstance()->start([this, currentGen, row, fi]() {
+                    const QString iconUrl = embeddedPackIcon(fi, { "icon.png", "pack.png", "preview.png", "thumbnail.png", "screenshot.png" });
+                    if (!iconUrl.isEmpty()) {
+                        QMetaObject::invokeMethod(this, [this, currentGen, row, iconUrl]() {
+                            if (currentGen == m_refreshGen && row >= 0 && row < m_items.size()) {
+                                m_items[row].iconUrl = iconUrl;
+                                emit dataChanged(index(row, 0), index(row, 0), {IconUrlRole});
+                            }
+                        }, Qt::QueuedConnection);
+                    }
+                });
             }
         }
 

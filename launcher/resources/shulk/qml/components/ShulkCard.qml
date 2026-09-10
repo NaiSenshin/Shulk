@@ -115,14 +115,13 @@ FocusScope {
                 color: Theme.accentPlay
                 Item {
                     readonly property int runOffset: Theme.getShadowOffset(Theme.sizeSmall)
-                    readonly property int baselineAdj: Math.max(1, Math.round(Theme.sizeSmall * 0.12))
                     anchors.centerIn: parent
-                    implicitWidth: runningLabel.implicitWidth
-                    implicitHeight: runningLabel.implicitHeight
+                    width: runningLabel.implicitWidth
+                    height: runningLabel.implicitHeight
 
                     Text {
                         x: parent.runOffset
-                        y: parent.runOffset + parent.baselineAdj
+                        y: parent.runOffset
                         text: qsTr("RUNNING")
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.sizeSmall
@@ -132,7 +131,8 @@ FocusScope {
 
                     Text {
                         id: runningLabel
-                        y: parent.baselineAdj
+                        x: 0
+                        y: 0
                         text: qsTr("RUNNING")
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.sizeSmall

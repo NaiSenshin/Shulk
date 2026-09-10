@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Qt5Compat.GraphicalEffects
 import org.shulk.launcher
 import "theme"
 import "components"
@@ -38,9 +39,23 @@ ApplicationWindow {
         confirmDialog.open()
     }
 
+
     // Central Controller & Action Router
     Connections {
         target: shulkInput
+
+        function onKonamiCodeTriggered() {
+            var newlyUnlocked = shulkTheme.unlockConsolePanoramas()
+            if (typeof shulkSound !== "undefined") {
+                shulkSound.playAchievement()
+            }
+            shulkTheme.setPanorama("console_tu1")
+            achievementToast.trigger(
+                qsTr("Challenge Complete!"),
+                qsTr("All Minecraft Console Edition Panoramas Unlocked!")
+            )
+        }
+
         function onActionTriggered(action) {
             // Modal dialogs intercept first with full controller handling
             if (errorDialog.visible) {
@@ -65,6 +80,10 @@ ApplicationWindow {
             }
             if (addAccountDialog.visible) {
                 addAccountDialog.handleAction(action)
+                return
+            }
+            if (panoramaDialog.visible) {
+                panoramaDialog.handleAction(action)
                 return
             }
 
@@ -182,6 +201,10 @@ ApplicationWindow {
                 }
             }
 
+            layer.enabled: (shulkTheme.panoramaBlurRadius > 0)
+            layer.effect: FastBlur {
+                radius: shulkTheme.panoramaBlurRadius
+            }
         }
 
         // Ambient Atmospheric Vignette & Contrast
@@ -340,12 +363,25 @@ ApplicationWindow {
 
                 DiscoverView {
                     id: discoverView
+                    onEnterTopBarRequested: {
+                        appWindow.inTopBar = true
+                        navBar.isFocused = true
+                        navBar.focusIndex = 1
+                    }
                 }
 
                 SettingsView {
                     id: settingsView
+                    onEnterTopBarRequested: {
+                        appWindow.inTopBar = true
+                        navBar.isFocused = true
+                        navBar.focusIndex = 1
+                    }
                     onAddAccountRequested: {
                         addAccountDialog.open()
+                    }
+                    onOpenPanoramaDialogRequested: {
+                        panoramaDialog.open()
                     }
                     onConfirmRemoveAccountRequested: (index, name) => {
                         appWindow.pendingDeleteType = "account"
@@ -422,6 +458,14 @@ ApplicationWindow {
                 if (appWindow.inDetailView) return (detailView.activeTab >= 1 && detailView.activeTab <= 4) ? qsTr("Browse / Add") : qsTr("Select / Play")
                 if (appWindow.activeNavTab === 2) return qsTr("View Details")
                 if (appWindow.activeNavTab === 3) return settingsView.focusPane === 1 ? qsTr("Select / Apply") : qsTr("Enter Category")
+                if (appWindow.activeNavTab === 0 && !appWindow.inDetailView) {
+                    if (homeView.activeSection === 2) {
+                        return (shulkRecentServers.hasServers && homeView.recentServerIndex < shulkRecentServers.count)
+                            ? (shulkRecentServers.get(homeView.recentServerIndex).instanceExists ? qsTr("Join Server") : qsTr("Remove"))
+                            : qsTr("Select")
+                    }
+                    return homeView.activeSection === 1 ? qsTr("View Pack") : (homeView.lastPlayedProfile ? qsTr("Play") : qsTr("Create Profile"))
+                }
                 return qsTr("Select")
             }
             secondaryHintText: {
@@ -437,6 +481,9 @@ ApplicationWindow {
                 if (detailView.contentBrowserOpen || (appWindow.activeNavTab === 2 && discoverView.inPackDetail) || appWindow.activeNavTab === 3) return ""
                 if (appWindow.activeDetailProfile && appWindow.activeDetailProfile.isRunning) return qsTr("Stop Game")
                 if (appWindow.activeNavTab === 1) return ""
+                if (appWindow.activeNavTab === 0 && !appWindow.inDetailView) {
+                    return homeView.activeSection === 2 ? (shulkRecentServers.hasServers ? qsTr("Quick Join") : "") : qsTr("Quick Play")
+                }
                 return appWindow.activeNavTab === 2 ? qsTr("Next Source") : qsTr("Quick Play")
             }
             searchAction: {
@@ -450,11 +497,17 @@ ApplicationWindow {
                     return ""
                 }
                 if (appWindow.activeNavTab === 3) return ""
+                if (appWindow.activeNavTab === 0 && !appWindow.inDetailView && homeView.activeSection === 2) {
+                    return shulkRecentServers.hasServers ? qsTr("Remove") : ""
+                }
                 if (appWindow.activeNavTab === 2 || appWindow.activeNavTab === 1) return qsTr("Search")
                 return qsTr("Browse Packs")
             }
             menuAction: {
                 if (detailView.contentBrowserOpen || (appWindow.activeNavTab === 2 && discoverView.inPackDetail) || appWindow.activeNavTab === 2 || appWindow.activeNavTab === 3) return ""
+                if (appWindow.activeNavTab === 0 && !appWindow.inDetailView && homeView.activeSection === 2) {
+                    return shulkRecentServers.hasServers ? qsTr("Remove") : ""
+                }
                 return qsTr("Options")
             }
             extraAction: (appWindow.activeNavTab === 2 && discoverView.inPackDetail) ? qsTr("Switch Tabs") : (appWindow.activeNavTab === 2 ? qsTr("Switch Source") : "")
@@ -552,6 +605,11 @@ ApplicationWindow {
     // Add Account Dialog
     ShulkAddAccountDialog {
         id: addAccountDialog
+    }
+
+    // Panorama Selection Dialog
+    ShulkPanoramaDialog {
+        id: panoramaDialog
     }
 
     // Dedicated launch surface. Keep this intentionally restrained: launching a
@@ -783,6 +841,99 @@ ApplicationWindow {
         function onLastErrorChanged() {
             if (shulkLauncher.hasError) {
                 errorDialog.open()
+            }
+        }
+    }
+
+    // -------------------------------------------------------------
+    // MINECRAFT ADVANCEMENT / ACHIEVEMENT TOAST POPUP (EASTER EGG)
+    // -------------------------------------------------------------
+    Rectangle {
+        id: achievementToast
+        property bool isShown: false
+        property string titleText: qsTr("Challenge Complete!")
+        property string descText: qsTr("Console Edition Panoramas Unlocked!")
+
+        function trigger(title, desc) {
+            if (title) titleText = title
+            if (desc) descText = desc
+            isShown = true
+            toastAnimTimer.restart()
+        }
+
+        z: 99999
+        visible: opacity > 0.01
+        width: Math.min(380 * Theme.scale, parent.width - 40 * Theme.scale)
+        height: 68 * Theme.scale
+        anchors.top: parent.top
+        anchors.topMargin: isShown ? (74 * Theme.scale) : (10 * Theme.scale)
+        anchors.right: parent.right
+        anchors.rightMargin: 24 * Theme.scale
+
+        color: "#1B1724"
+        border.color: "#A855F7" // Purple Challenge border
+        border.width: Math.max(2, Math.round(2 * Theme.scale))
+        radius: 4 * Theme.scale
+
+        opacity: isShown ? 1.0 : 0.0
+
+        Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+        Behavior on anchors.topMargin { NumberAnimation { duration: 400; easing.type: Easing.OutBack } }
+
+        Timer {
+            id: toastAnimTimer
+            interval: 6500
+            onTriggered: achievementToast.isShown = false
+        }
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 10 * Theme.scale
+            spacing: 12 * Theme.scale
+
+            // Recessed Item Slot
+            Rectangle {
+                Layout.preferredWidth: 48 * Theme.scale
+                Layout.preferredHeight: 48 * Theme.scale
+                color: "#100C18"
+                border.color: "#A855F7"
+                border.width: 1
+                radius: 4 * Theme.scale
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 32 * Theme.scale
+                    height: 32 * Theme.scale
+                    source: "qrc:/shulk/icons/chest.png"
+                    smooth: false
+                    fillMode: Image.PreserveAspectFit
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 3 * Theme.scale
+
+                // Title: Gold Mojangles text with Minecraft drop shadow
+                ShulkText {
+                    text: achievementToast.titleText
+                    font.pixelSize: 13 * Theme.scale
+                    font.bold: true
+                    color: "#FFAA00"
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                }
+
+                // Subtitle: Crisp White text with Minecraft drop shadow
+                ShulkText {
+                    text: achievementToast.descText
+                    font.pixelSize: 11 * Theme.scale
+                    color: "#FFFFFF"
+                    Layout.fillWidth: true
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 2
+                    elide: Text.ElideRight
+                }
             }
         }
     }
