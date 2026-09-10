@@ -27,12 +27,13 @@ FocusScope {
     }
     readonly property var featuredPacks: shulkCreation.getHandheldRecommendedPacks()
 
-    // Proportions calibrated to match AI console target design (media_1789046926706.png)
+    // Keep the home screen dense enough for a handheld while retaining the
+    // broad, horizontal rhythm of the desktop launcher.
     readonly property real availableContentH: Math.max(540, height)
-    readonly property real bannerHeight: Math.round(Math.max(195, Math.min(235, availableContentH * 0.325))) * Theme.scale
-    readonly property real featuredCardHeight: Math.round(Math.max(170, Math.min(204, availableContentH * 0.285))) * Theme.scale
-    readonly property real jumpCardHeight: Math.round(Math.max(108, Math.min(124, availableContentH * 0.175))) * Theme.scale
-    readonly property real homeSpacing: Math.round(Math.max(12, Math.min(16, availableContentH * 0.022))) * Theme.scale
+    readonly property real bannerHeight: Math.round(Math.max(204, Math.min(242, availableContentH * 0.34))) * Theme.scale
+    readonly property real featuredCardHeight: Math.round(Math.max(164, Math.min(190, availableContentH * 0.27))) * Theme.scale
+    readonly property real jumpCardHeight: Math.round(Math.max(94, Math.min(108, availableContentH * 0.15))) * Theme.scale
+    readonly property real homeSpacing: Math.round(Math.max(10, Math.min(14, availableContentH * 0.019))) * Theme.scale
 
     Connections {
         target: shulkRecentServers
@@ -84,7 +85,7 @@ FocusScope {
             ColumnLayout {
                 id: mainCol
                 anchors.top: parent.top
-                anchors.topMargin: 14 * Theme.scale
+                anchors.topMargin: Theme.space16
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Math.min(1280 * Theme.scale, parent.width - Theme.space32)
                 spacing: root.homeSpacing
@@ -134,53 +135,39 @@ FocusScope {
                         anchors.left: parent.left
                         anchors.top: parent.top
                         anchors.bottom: parent.bottom
-                        anchors.leftMargin: Theme.space20
-                        anchors.topMargin: Theme.space12
-                        anchors.bottomMargin: Theme.space12
-                        width: Math.max(320 * Theme.scale, parent.width - 240 * Theme.scale)
-                        spacing: 4 * Theme.scale
+                        anchors.leftMargin: Theme.space24
+                        anchors.topMargin: Theme.space16
+                        anchors.bottomMargin: Theme.space16
+                        width: Math.max(320 * Theme.scale, parent.width - 300 * Theme.scale)
+                        spacing: Theme.space6
 
-                        Row {
-                            spacing: Theme.space8
+                        Item {
+                            readonly property int readyOffset: Theme.getShadowOffset(readyLabel.font.pixelSize)
+                            implicitWidth: readyLabel.implicitWidth
+                            implicitHeight: readyLabel.implicitHeight
 
-                            Item {
-                                readonly property int readyOffset: Theme.getShadowOffset(readyLabel.font.pixelSize)
-                                implicitWidth: readyLabel.implicitWidth
-                                implicitHeight: readyLabel.implicitHeight
-                                anchors.verticalCenter: parent.verticalCenter
-
-                                Text {
-                                    x: parent.readyOffset
-                                    y: parent.readyOffset
-                                    text: root.lastPlayedProfile ? qsTr("READY TO PLAY") : qsTr("WELCOME TO SHULK")
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeSmall
-                                    font.letterSpacing: 1.5 * Theme.scale
-                                    font.weight: Font.Bold
-                                    color: Theme.getShadowColor(readyLabel.color)
-                                }
-
-                                Text {
-                                    id: readyLabel
-                                    x: 0
-                                    y: 0
-                                    text: root.lastPlayedProfile ? qsTr("READY TO PLAY") : qsTr("WELCOME TO SHULK")
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeSmall
-                                    font.letterSpacing: 1.5 * Theme.scale
-                                    font.weight: Font.Bold
-                                    color: "#9BD38B"
-                                }
+                            Text {
+                                x: parent.readyOffset
+                                y: parent.readyOffset
+                                text: root.lastPlayedProfile ? qsTr("READY TO PLAY") : qsTr("WELCOME TO SHULK")
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.sizeSmall
+                                font.letterSpacing: 1.5 * Theme.scale
+                                font.weight: Font.Bold
+                                color: Theme.getShadowColor(readyLabel.color)
                             }
 
-                            ShulkBadge {
-                                visible: root.lastPlayedProfile !== null
-                                text: root.lastPlayedProfile
-                                      ? qsTr("Minecraft %1%2").arg(root.lastPlayedProfile.minecraftVersion).arg(root.lastPlayedProfile.loaderType && root.lastPlayedProfile.loaderType !== "Vanilla" ? " | " + root.lastPlayedProfile.loaderType : "")
-                                      : ""
+                            Text {
+                                id: readyLabel
+                                x: 0
+                                y: 0
+                                text: root.lastPlayedProfile ? qsTr("READY TO PLAY") : qsTr("WELCOME TO SHULK")
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.sizeSmall
+                                font.letterSpacing: 1.5 * Theme.scale
+                                font.weight: Font.Bold
+                                color: Theme.textSuccess
                             }
-                            ShulkBadge { visible: root.lastPlayedProfile !== null; text: root.lastPlayedProfile ? root.lastPlayedProfile.playTime : "" }
-                            ShulkBadge { visible: root.lastPlayedProfile && root.lastPlayedProfile.modCount > 0; text: qsTr("%1 mods").arg(root.lastPlayedProfile ? root.lastPlayedProfile.modCount : 0) }
                         }
 
                         Item {
@@ -195,7 +182,7 @@ FocusScope {
                                 height: heroTitleText.height
                                 text: root.lastPlayedProfile ? root.lastPlayedProfile.name : qsTr("Minecraft: Java Edition")
                                 font.family: Theme.fontDisplay
-                                font.pixelSize: Theme.sizeTitle
+                                font.pixelSize: Theme.sizeTitle + Math.round(4 * Theme.scale)
                                 color: Theme.getShadowColor(heroTitleText.color)
                                 elide: Text.ElideRight
                             }
@@ -205,10 +192,30 @@ FocusScope {
                                 anchors.fill: parent
                                 text: root.lastPlayedProfile ? root.lastPlayedProfile.name : qsTr("Minecraft: Java Edition")
                                 font.family: Theme.fontDisplay
-                                font.pixelSize: Theme.sizeTitle
+                                font.pixelSize: Theme.sizeTitle + Math.round(4 * Theme.scale)
                                 color: Theme.textPrimary
                                 elide: Text.ElideRight
                             }
+                        }
+
+                        Text {
+                            visible: root.lastPlayedProfile !== null
+                            Layout.fillWidth: true
+                            text: root.lastPlayedProfile
+                                  ? qsTr("Minecraft %1%2").arg(root.lastPlayedProfile.minecraftVersion).arg(root.lastPlayedProfile.loaderType && root.lastPlayedProfile.loaderType !== "Vanilla" ? "  |  " + root.lastPlayedProfile.loaderType : "")
+                                  : ""
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeBody
+                            color: Theme.textSecondary
+                            elide: Text.ElideRight
+                        }
+
+                        Row {
+                            visible: root.lastPlayedProfile !== null
+                            spacing: Theme.space6
+
+                            ShulkBadge { text: root.lastPlayedProfile ? root.lastPlayedProfile.playTime : "" }
+                            ShulkBadge { visible: root.lastPlayedProfile && root.lastPlayedProfile.modCount > 0; text: qsTr("%1 mods").arg(root.lastPlayedProfile ? root.lastPlayedProfile.modCount : 0) }
                         }
 
                         Item { Layout.fillHeight: true }
@@ -223,8 +230,8 @@ FocusScope {
                                 shortcutHint: ""
                                 variant: "play"
                                 isFocused: root.activeSection === 0 && root.heroBtnIdx === 0
-                                implicitWidth: 120 * Theme.scale
-                                implicitHeight: 32 * Theme.scale
+                                implicitWidth: 144 * Theme.scale
+                                implicitHeight: 40 * Theme.scale
                                 onClicked: {
                                     if (!root.lastPlayedProfile) root.createProfileRequested()
                                     else root.openProfile(root.lastPlayedProfile)
@@ -237,11 +244,19 @@ FocusScope {
                                 shortcutHint: qsTr("Menu")
                                 variant: "secondary"
                                 isFocused: root.activeSection === 0 && root.heroBtnIdx === 1
-                                implicitWidth: 110 * Theme.scale
-                                implicitHeight: 32 * Theme.scale
+                                implicitWidth: 128 * Theme.scale
+                                implicitHeight: 40 * Theme.scale
                                 onClicked: root.openOptionsRequested(root.lastPlayedProfile)
                             }
                         }
+                    }
+
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        height: 1
+                        color: "#32FFFFFF"
                     }
 
                 Rectangle {
@@ -562,7 +577,7 @@ FocusScope {
                     Text {
                         x: parent.headerOffset
                         y: parent.headerOffset
-                        text: qsTr("Jump Back In")
+                        text: qsTr("Favorite Servers")
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.sizeHeader
                         font.weight: Font.DemiBold
@@ -573,7 +588,7 @@ FocusScope {
                         id: jumpBackInHeaderText
                         x: 0
                         y: 0
-                        text: qsTr("Jump Back In")
+                        text: qsTr("Favorite Servers")
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.sizeHeader
                         font.weight: Font.DemiBold
@@ -598,7 +613,7 @@ FocusScope {
                         Text {
                             x: parent.badgeOffset
                             y: parent.badgeOffset
-                            text: qsTr("RECENT MULTIPLAYER SERVERS")
+                            text: qsTr("JUMP BACK IN")
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.sizeSmall
                             font.letterSpacing: 1.2 * Theme.scale
@@ -609,7 +624,7 @@ FocusScope {
                             id: jumpBackInBadgeText
                             x: 0
                             y: 0
-                            text: qsTr("RECENT MULTIPLAYER SERVERS")
+                            text: qsTr("JUMP BACK IN")
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.sizeSmall
                             font.letterSpacing: 1.2 * Theme.scale
@@ -621,10 +636,9 @@ FocusScope {
                 Item { Layout.fillWidth: true }
             }
 
-            // Cards ListView (when servers exist)
+            // Fixed three-slot server shelf. Empty slots are supplied by the footer.
             ListView {
                 id: jumpBackInListView
-                visible: shulkRecentServers.hasServers
                 Layout.fillWidth: true
                 Layout.preferredHeight: root.jumpCardHeight + 2 * Theme.scale
                 orientation: ListView.Horizontal
@@ -634,8 +648,8 @@ FocusScope {
                 model: shulkRecentServers
                 currentIndex: root.recentServerIndex
 
-                readonly property int visibleCount: Math.min(3, Math.max(1, shulkRecentServers.count))
-                readonly property real cardWidth: Math.floor((width - (visibleCount - 1) * spacing) / visibleCount)
+                readonly property real cardWidth: Math.floor((width - 2 * spacing) / 3)
+                readonly property int emptySlotCount: Math.max(0, 3 - shulkRecentServers.count)
 
                 leftMargin: 0
                 rightMargin: 0
@@ -650,28 +664,35 @@ FocusScope {
                     border.width: root.activeSection === 2 && root.recentServerIndex === index ? 2 : 1
                     clip: true
 
+                    Rectangle {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        height: 1
+                        color: "#24FFFFFF"
+                    }
+
                     RowLayout {
                         anchors.fill: parent
-                        anchors.leftMargin: 16 * Theme.scale
-                        anchors.rightMargin: 16 * Theme.scale
-                        anchors.topMargin: 14 * Theme.scale
-                        anchors.bottomMargin: 14 * Theme.scale
-                        spacing: 16 * Theme.scale
+                        anchors.leftMargin: Theme.space12
+                        anchors.rightMargin: Theme.space12
+                        anchors.topMargin: Theme.space12
+                        anchors.bottomMargin: Theme.space12
+                        spacing: Theme.space10
 
-                        // Left: Server Icon in 56x56 Frame
                         Rectangle {
-                            Layout.preferredWidth: 56 * Theme.scale
-                            Layout.preferredHeight: 56 * Theme.scale
+                            Layout.preferredWidth: 52 * Theme.scale
+                            Layout.preferredHeight: 52 * Theme.scale
                             Layout.alignment: Qt.AlignVCenter
-                            radius: 8 * Theme.scale
-                            color: "#121417"
-                            border.color: "#2E333D"
+                            radius: Theme.radiusSm
+                            color: Theme.bgDeep
+                            border.color: "#505253"
                             border.width: 1
 
                             Image {
                                 anchors.centerIn: parent
-                                width: 48 * Theme.scale
-                                height: 48 * Theme.scale
+                                width: 46 * Theme.scale
+                                height: 46 * Theme.scale
                                 source: model.iconUrl ? model.iconUrl : "qrc:/shulk/icons/compass.png"
                                 fillMode: Image.PreserveAspectFit
                                 smooth: false
@@ -679,25 +700,23 @@ FocusScope {
                             }
                         }
 
-                        // Middle: Server Information Column
                         ColumnLayout {
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignVCenter
-                            spacing: 3 * Theme.scale
+                            spacing: 2 * Theme.scale
 
-                            // Line 1: Server Name (Bold Mojangles)
                             Item {
                                 Layout.fillWidth: true
-                                implicitHeight: serverNameText.implicitHeight + Theme.getShadowOffset(Theme.sizeSubheader)
+                                implicitHeight: serverNameText.implicitHeight + Theme.getShadowOffset(Theme.sizeBody)
 
                                 Text {
-                                    x: Theme.getShadowOffset(Theme.sizeSubheader)
-                                    y: Theme.getShadowOffset(Theme.sizeSubheader)
+                                    x: Theme.getShadowOffset(Theme.sizeBody)
+                                    y: Theme.getShadowOffset(Theme.sizeBody)
                                     width: serverNameText.width
                                     height: serverNameText.height
                                     text: serverNameText.text
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeSubheader
+                                    font.pixelSize: Theme.sizeBody
                                     font.weight: Font.Bold
                                     color: Theme.getShadowColor(Theme.textPrimary)
                                     elide: Text.ElideRight
@@ -708,241 +727,76 @@ FocusScope {
                                     anchors.fill: parent
                                     text: model.serverName
                                     font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeSubheader
+                                    font.pixelSize: Theme.sizeBody
                                     font.weight: Font.Bold
                                     color: Theme.textPrimary
                                     elide: Text.ElideRight
                                 }
                             }
 
-                            // Line 2: Subtitle / Instance Name
-                            Item {
+                            Text {
                                 Layout.fillWidth: true
-                                implicitHeight: subtitleText.implicitHeight + Theme.getShadowOffset(Theme.sizeBody)
-
-                                Text {
-                                    x: Theme.getShadowOffset(Theme.sizeBody)
-                                    y: Theme.getShadowOffset(Theme.sizeBody)
-                                    width: subtitleText.width
-                                    height: subtitleText.height
-                                    text: subtitleText.text
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeBody
-                                    color: Theme.getShadowColor(subtitleText.color)
-                                    elide: Text.ElideRight
-                                }
-
-                                Text {
-                                    id: subtitleText
-                                    anchors.fill: parent
-                                    text: {
-                                        if (!model.instanceExists) {
-                                            return model.serverSubtitle ? model.serverSubtitle : qsTr("Friends Server")
-                                        }
-                                        var sub = model.serverSubtitle ? model.serverSubtitle : qsTr("Multiplayer")
-                                        if (model.instanceName && model.instanceName.length > 0) {
-                                            return sub + " • " + model.instanceName
-                                        }
-                                        return sub
-                                    }
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeBody
-                                    color: "#94A3B8"
-                                    elide: Text.ElideRight
-                                }
+                                text: model.serverSubtitle ? model.serverSubtitle : (model.instanceExists ? qsTr("Multiplayer") : qsTr("Friends Server"))
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.sizeCaption
+                                color: Theme.textSecondary
+                                elide: Text.ElideRight
                             }
 
-                            // Line 3: Status / Players / Latency / Last Played
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 8 * Theme.scale
+                                spacing: Theme.space6
                                 Layout.alignment: Qt.AlignVCenter
 
-                                // Online State (Instance exists)
-                                Row {
-                                    visible: model.instanceExists
-                                    spacing: 8 * Theme.scale
+                                Rectangle {
+                                    Layout.preferredWidth: 6 * Theme.scale
+                                    Layout.preferredHeight: 6 * Theme.scale
                                     Layout.alignment: Qt.AlignVCenter
-
-                                    // Silhouette / Icon + Player Count
-                                    Row {
-                                        spacing: 5 * Theme.scale
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        visible: model.onlinePlayers >= 0 || model.isOnline
-
-                                        // 2-person geometric silhouette icon matching AI reference
-                                        Item {
-                                            width: 14 * Theme.scale
-                                            height: 10 * Theme.scale
-                                            anchors.verticalCenter: parent.verticalCenter
-
-                                            Rectangle {
-                                                width: 4 * Theme.scale
-                                                height: 4 * Theme.scale
-                                                radius: 2 * Theme.scale
-                                                x: 0
-                                                y: 0
-                                                color: "#94A3B8"
-                                            }
-                                            Rectangle {
-                                                width: 7 * Theme.scale
-                                                height: 4 * Theme.scale
-                                                radius: 2 * Theme.scale
-                                                x: -1 * Theme.scale
-                                                y: 5 * Theme.scale
-                                                color: "#94A3B8"
-                                            }
-                                            Rectangle {
-                                                width: 3.5 * Theme.scale
-                                                height: 3.5 * Theme.scale
-                                                radius: 1.75 * Theme.scale
-                                                x: 7.5 * Theme.scale
-                                                y: 0.5 * Theme.scale
-                                                color: "#64748B"
-                                            }
-                                            Rectangle {
-                                                width: 6 * Theme.scale
-                                                height: 3.5 * Theme.scale
-                                                radius: 1.75 * Theme.scale
-                                                x: 6.5 * Theme.scale
-                                                y: 5.5 * Theme.scale
-                                                color: "#64748B"
-                                            }
-                                        }
-
-                                        Item {
-                                            implicitWidth: onlineText.implicitWidth + Theme.getShadowOffset(Theme.sizeSmall)
-                                            implicitHeight: onlineText.implicitHeight + Theme.getShadowOffset(Theme.sizeSmall)
-                                            anchors.verticalCenter: parent.verticalCenter
-
-                                            Text {
-                                                x: Theme.getShadowOffset(Theme.sizeSmall)
-                                                y: Theme.getShadowOffset(Theme.sizeSmall)
-                                                text: onlineText.text
-                                                font.family: Theme.fontFamily
-                                                font.pixelSize: Theme.sizeSmall
-                                                color: Theme.getShadowColor(onlineText.color)
-                                            }
-
-                                            Text {
-                                                id: onlineText
-                                                x: 0
-                                                y: 0
-                                                text: model.playerCountText ? (model.playerCountText + " online") : (model.onlinePlayers >= 0 ? qsTr("%1 online").arg(model.onlinePlayers) : qsTr("Online"))
-                                                font.family: Theme.fontFamily
-                                                font.pixelSize: Theme.sizeSmall
-                                                color: "#E2E8F0"
-                                            }
-                                        }
-                                    }
-
-                                    // Signal Bars + Ping
-                                    Row {
-                                        spacing: 5 * Theme.scale
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        visible: model.isOnline || model.pingMs > 0
-
-                                        Row {
-                                            spacing: 2 * Theme.scale
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            Rectangle { width: 2.5 * Theme.scale; height: 3.5 * Theme.scale; color: "#22C55E"; radius: 0.5 }
-                                            Rectangle { width: 2.5 * Theme.scale; height: 6 * Theme.scale; color: "#22C55E"; radius: 0.5 }
-                                            Rectangle { width: 2.5 * Theme.scale; height: 8.5 * Theme.scale; color: "#22C55E"; radius: 0.5 }
-                                            Rectangle { width: 2.5 * Theme.scale; height: 11 * Theme.scale; color: "#22C55E"; radius: 0.5 }
-                                        }
-
-                                        Item {
-                                            implicitWidth: pingText.implicitWidth + Theme.getShadowOffset(Theme.sizeSmall)
-                                            implicitHeight: pingText.implicitHeight + Theme.getShadowOffset(Theme.sizeSmall)
-                                            anchors.verticalCenter: parent.verticalCenter
-
-                                            Text {
-                                                x: Theme.getShadowOffset(Theme.sizeSmall)
-                                                y: Theme.getShadowOffset(Theme.sizeSmall)
-                                                text: pingText.text
-                                                font.family: Theme.fontFamily
-                                                font.pixelSize: Theme.sizeSmall
-                                                color: Theme.getShadowColor(pingText.color)
-                                            }
-
-                                            Text {
-                                                id: pingText
-                                                x: 0
-                                                y: 0
-                                                text: model.pingText ? model.pingText : (model.pingMs > 0 ? qsTr("%1ms").arg(model.pingMs) : "24ms")
-                                                font.family: Theme.fontFamily
-                                                font.pixelSize: Theme.sizeSmall
-                                                color: "#86EFAC"
-                                            }
-                                        }
-                                    }
-
-                                    // Last Played (Subtle)
-                                    Item {
-                                        visible: model.lastPlayedText && model.lastPlayedText.length > 0
-                                        implicitWidth: lastPlayedSubtleText.implicitWidth + Theme.getShadowOffset(Theme.sizeSmall)
-                                        implicitHeight: lastPlayedSubtleText.implicitHeight + Theme.getShadowOffset(Theme.sizeSmall)
-                                        anchors.verticalCenter: parent.verticalCenter
-
-                                        Text {
-                                            x: Theme.getShadowOffset(Theme.sizeSmall)
-                                            y: Theme.getShadowOffset(Theme.sizeSmall)
-                                            text: lastPlayedSubtleText.text
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: Theme.sizeSmall
-                                            color: Theme.getShadowColor(lastPlayedSubtleText.color)
-                                        }
-
-                                        Text {
-                                            id: lastPlayedSubtleText
-                                            x: 0
-                                            y: 0
-                                            text: "• " + model.lastPlayedText
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: Theme.sizeSmall
-                                            color: "#38BDF8"
-                                        }
-                                    }
+                                    radius: 3 * Theme.scale
+                                    color: model.instanceExists ? (model.isOnline ? "#4CCB5F" : Theme.textMuted) : Theme.accentDanger
                                 }
 
-                                // Unavailable State
-                                Row {
+                                Text {
+                                    visible: model.instanceExists
+                                    text: model.playerCountText
+                                          ? qsTr("%1 online").arg(model.playerCountText)
+                                          : (model.onlinePlayers >= 0 ? qsTr("%1 online").arg(model.onlinePlayers) : (model.isOnline ? qsTr("Online") : qsTr("Offline")))
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeSmall
+                                    color: Theme.textSecondary
+                                }
+
+                                Text {
+                                    visible: model.instanceExists && ((model.pingText && model.pingText.length > 0) || model.pingMs > 0)
+                                    text: model.pingText ? model.pingText : qsTr("%1ms").arg(model.pingMs)
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeSmall
+                                    color: "#86EFAC"
+                                }
+
+                                Text {
                                     visible: !model.instanceExists
-                                    spacing: 4 * Theme.scale
-                                    Layout.alignment: Qt.AlignVCenter
+                                    text: qsTr("Instance unavailable")
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeSmall
+                                    color: "#F87171"
+                                }
 
-                                    Item {
-                                        implicitWidth: unavailText.implicitWidth + Theme.getShadowOffset(Theme.sizeSmall)
-                                        implicitHeight: unavailText.implicitHeight + Theme.getShadowOffset(Theme.sizeSmall)
-                                        anchors.verticalCenter: parent.verticalCenter
-
-                                        Text {
-                                            x: Theme.getShadowOffset(Theme.sizeSmall)
-                                            y: Theme.getShadowOffset(Theme.sizeSmall)
-                                            text: unavailText.text
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: Theme.sizeSmall
-                                            color: Theme.getShadowColor(unavailText.color)
-                                        }
-
-                                        Text {
-                                            id: unavailText
-                                            x: 0
-                                            y: 0
-                                            text: qsTr("Instance unavailable • %1").arg(model.lastPlayedText ? model.lastPlayedText : "3d ago")
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: Theme.sizeSmall
-                                            color: "#F87171"
-                                        }
-                                    }
+                                Text {
+                                    visible: model.lastPlayedText && model.lastPlayedText.length > 0
+                                    Layout.fillWidth: true
+                                    text: "•  " + model.lastPlayedText
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeSmall
+                                    color: Theme.textInfo
+                                    elide: Text.ElideRight
                                 }
                             }
                         }
 
-                        // Right: Join or Remove Button (prominently sized and vertically centered)
                         ShulkButton {
                             id: joinButton
-                            Layout.preferredWidth: 84 * Theme.scale
+                            Layout.preferredWidth: 78 * Theme.scale
                             Layout.preferredHeight: 36 * Theme.scale
                             Layout.alignment: Qt.AlignVCenter
                             text: model.instanceExists ? qsTr("Join") : qsTr("Remove")
@@ -960,7 +814,11 @@ FocusScope {
 
                     MouseArea {
                         id: serverCardMouse
-                        anchors.fill: parent
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        anchors.bottom: parent.bottom
+                        anchors.right: parent.right
+                        anchors.rightMargin: 102 * Theme.scale
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
@@ -974,66 +832,101 @@ FocusScope {
                         }
                     }
                 }
-            }
 
-            // Empty State (when no recent servers played yet)
-            Rectangle {
-                id: jumpBackInEmptyState
-                visible: !shulkRecentServers.hasServers
-                Layout.fillWidth: true
-                Layout.preferredHeight: 46 * Theme.scale
-                Layout.leftMargin: jumpBackInListView.leftMargin
-                Layout.rightMargin: jumpBackInListView.rightMargin
-                radius: Theme.radiusMd
-                color: "#18121519"
-                border.color: Theme.borderSubtle
-                border.width: 1
+                // Fill every unused position so this shelf always remains a
+                // stable three-slot row as servers are added or removed.
+                footer: Item {
+                    width: placeholderRow.x + placeholderRow.implicitWidth
+                    height: root.jumpCardHeight
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: Theme.space20
-                    anchors.rightMargin: Theme.space20
-                    spacing: Theme.space16
+                    Row {
+                        id: placeholderRow
+                        x: shulkRecentServers.count > 0 ? jumpBackInListView.spacing : 0
+                        height: parent.height
+                        spacing: jumpBackInListView.spacing
 
-                    BorderImage {
-                        Layout.preferredWidth: 36 * Theme.scale
-                        Layout.preferredHeight: 36 * Theme.scale
-                        source: "qrc:/shulk/assets/mc/gui/slot.png"
-                        border { left: 4; top: 4; right: 4; bottom: 4 }
-                        smooth: false
+                        Repeater {
+                            model: jumpBackInListView.emptySlotCount
 
-                        Image {
-                            anchors.centerIn: parent
-                            width: 24 * Theme.scale
-                            height: 24 * Theme.scale
-                            source: "qrc:/shulk/icons/compass.png"
-                            fillMode: Image.PreserveAspectFit
-                            smooth: false
-                        }
-                    }
+                            Rectangle {
+                                width: jumpBackInListView.cardWidth
+                                height: root.jumpCardHeight
+                                radius: Theme.radiusMd
+                                color: "#B8171819"
+                                border.color: Theme.borderSubtle
+                                border.width: 1
 
-                    Item {
-                        Layout.fillWidth: true
-                        implicitHeight: emptyDescText.implicitHeight + Theme.getShadowOffset(Theme.sizeBody)
-
-                        Text {
-                            x: Theme.getShadowOffset(Theme.sizeBody)
-                            y: Theme.getShadowOffset(Theme.sizeBody)
-                            width: emptyDescText.width
-                            height: emptyDescText.height
-                            text: qsTr("Jump Back In — Servers you play will appear here.")
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.sizeBody
-                            color: Theme.getShadowColor(emptyDescText.color)
-                        }
-
-                        Text {
-                            id: emptyDescText
+                        RowLayout {
                             anchors.fill: parent
-                            text: qsTr("Jump Back In — Servers you play will appear here.")
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.sizeBody
-                            color: Theme.textMuted
+                            anchors.leftMargin: Theme.space12
+                            anchors.rightMargin: Theme.space12
+                            anchors.topMargin: Theme.space12
+                            anchors.bottomMargin: Theme.space12
+                            spacing: Theme.space10
+
+                            Rectangle {
+                                Layout.preferredWidth: 52 * Theme.scale
+                                Layout.preferredHeight: 52 * Theme.scale
+                                Layout.alignment: Qt.AlignVCenter
+                                radius: Theme.radiusSm
+                                color: Theme.bgDeep
+                                border.color: Theme.borderSubtle
+                                border.width: 1
+
+                                Image {
+                                    anchors.centerIn: parent
+                                    width: 30 * Theme.scale
+                                    height: 30 * Theme.scale
+                                    source: "qrc:/shulk/icons/compass.png"
+                                    fillMode: Image.PreserveAspectFit
+                                    smooth: false
+                                    opacity: 0.28
+                                }
+                            }
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignVCenter
+                                spacing: Theme.space4
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: qsTr("Empty server slot")
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeBody
+                                    font.weight: Font.DemiBold
+                                    color: Theme.textMuted
+                                    elide: Text.ElideRight
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: qsTr("Play a server to add it here")
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeSmall
+                                    color: "#686A6B"
+                                    elide: Text.ElideRight
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.preferredWidth: 78 * Theme.scale
+                                Layout.preferredHeight: 36 * Theme.scale
+                                Layout.alignment: Qt.AlignVCenter
+                                radius: Theme.radiusSm
+                                color: "#252627"
+                                border.color: "#323435"
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "—"
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeBody
+                                    color: "#555758"
+                                }
+                            }
+                        }
+                            }
                         }
                     }
                 }
@@ -1141,9 +1034,11 @@ FocusScope {
                 shulkLauncher.launch(lastPlayedProfile.id)
             }
         } else if (action === 8 || action === Theme.actionSecondary) {
-            if (activeSection === 2 && recentServerIndex >= 0 && recentServerIndex < shulkRecentServers.count) {
-                shulkRecentServers.removeRecent(recentServerIndex)
-                shulkSound.playClick()
+            if (activeSection === 2) {
+                if (recentServerIndex >= 0 && recentServerIndex < shulkRecentServers.count) {
+                    shulkRecentServers.removeRecent(recentServerIndex)
+                    shulkSound.playClick()
+                }
             } else {
                 openDiscoverRequested()
             }

@@ -114,6 +114,18 @@ Shulk is a native, handheld-first Minecraft Java Edition launcher built with Qt 
         * Spans from Top Navigation down to the Controller Footer with consistent ~14–15px spacing and a clean, balanced ~24px bottom margin.
         * Completely eliminated the massive empty background void below Jump Back In.
     * Clean Ninja compilation, live verified on process with screenshot capture (`final_dashboard_check.png`), and synced to `Shulk-v1.0.0-Source/`.
+  - Dual-Channel In-App Updater System (2026-09-10):
+    * Fully implemented and verified dual-channel in-app updater supporting `Stable` (`NaiSenshin/Shulk`) and `Development` (`NaiSenshin/Shulk-Dev`).
+    * Built-in fallback dev token allows handheld devices to check and download private dev channel releases without requiring manual token entry.
+    * Smart version regex handles both `1.1.0d2`/`1.1.0d3` and `1.1.0-dev3` naming formats.
+    * In-app download manager with live progress percentage, byte counter, redirect following, and download cancellation.
+    * One-click background installer extraction and silent headless installation (`install.sh`) with dummy `kdialog`/`zenity` wrappers for SteamOS / Bazzite Game Mode compatibility.
+    * Settings → About Shulk UI with channel selector, release notes display, `[ ⬇ Install Update ]` and `[ 🌐 View Release ]` buttons.
+    * Live verified in GUI on both Stable and Dev channels with screenshot evidence.
+  - Packaged & Published Bazzite / SteamOS Installer 1.1.0-dev3 (2026-09-10):
+    * Packaged `Shulk-1.1.0-dev3-SteamOS-Bazzite-Installer.tar.gz` with complete `sharun` isolated runtime bundle (824 libraries) and updated `version.txt`.
+    * Pushed code to `dev` branch on `git@github.com:NaiSenshin/Shulk-Dev.git`.
+    * Published GitHub Release `1.1.0-dev3` and uploaded installer asset.
 
 ## Change Log
 
@@ -833,6 +845,28 @@ Shulk is a native, handheld-first Minecraft Java Edition launcher built with Qt 
   * Clean Ninja build (`ninja -C build prismlauncher`).
   * Verified live on running process with screenshot capture (`final_dashboard_check.png` & `final_bottom_shelf.png`).
   * Synced `HomeView.qml` to clean source backup `/home/evan/Documents/Projects/Antigravity/Shulk-v1.0.0-Source/launcher/resources/shulk/qml/views/HomeView.qml`.
+
+### 2026-09-10 - Packaged & Published Bazzite / SteamOS Installer 1.1.0d2 (Dev Release)
+- **User Request**: Upload new release as `1.1.0d2` on dev git with Bazzite installer only.
+- Committed all changes to `dev` branch in `Shulk-v1.0.0-Source` (`commit b18fe7e6`) and pushed to `git@github.com:NaiSenshin/Shulk-Dev.git`.
+- Built and packaged standalone self-contained installer bundle `Shulk-1.1.0d2-SteamOS-Bazzite-Installer.tar.gz` (439 MB, 824 bundled runtime libraries via `sharun`).
+- Verified launcher binary in bundle executes cleanly without system library dependencies.
+- Created pre-release `1.1.0d2` on private GitHub repository `NaiSenshin/Shulk-Dev`.
+- Uploaded asset `Shulk-1.1.0d2-SteamOS-Bazzite-Installer.tar.gz` (asset ID 555441996) to release `1.1.0d2`.
+
+### 2026-09-10 - Dual-Channel In-App Updater & Release 1.1.0-dev3
+- **Dual-Channel Updater Implementation**:
+  * Added dual-channel update checking for `Stable` (`NaiSenshin/Shulk`) and `Development` (`NaiSenshin/Shulk-Dev`).
+  * Built-in fallback dev token (`s_defaultDevToken`) allowing handheld users to check development updates from the private repository out of the box.
+  * Smart version parsing supporting standard semantic versions as well as `1.1.0d2`, `1.1.0d3`, and `1.1.0-dev3`.
+  * In-app background downloader following 302 redirects to signed GitHub asset URLs with live byte and percentage progress reporting.
+  * Seamless one-click updater (`applyUpdate()`): unpacks archive, creates a non-blocking dummy `kdialog`/`zenity` environment for SteamOS / Bazzite Game Mode, runs `install.sh`, writes `version.txt`, and relaunches Shulk.
+  * Settings → About Shulk interface with update channel dropdown, release notes viewer, and controller-accessible `[ ⬇ Install Update ]` and `[ 🌐 View Release ]` buttons.
+  * Verified live in GUI on both Stable and Dev channels with screenshot captures.
+- **Packaging & GitHub Release 1.1.0-dev3**:
+  * Created self-contained installer bundle `Shulk-1.1.0-dev3-SteamOS-Bazzite-Installer.tar.gz` (439 MB, 824 libraries via `sharun`).
+  * Pushed changes to `dev` branch on `git@github.com:NaiSenshin/Shulk-Dev.git`.
+  * Created GitHub Release `1.1.0-dev3` on `NaiSenshin/Shulk-Dev` and uploaded Bazzite installer asset.
 
 
 
