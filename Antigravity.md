@@ -888,7 +888,7 @@ Shulk is a native, handheld-first Minecraft Java Edition launcher built with Qt 
   * **SteamOS / Bazzite Installer Bundle**: Packaged self-contained standalone installer `Shulk-1.1.0-SteamOS-Bazzite-Installer.tar.gz` (439 MB, 824 bundled runtime libraries via `sharun`, zero dependencies on immutable distros). Tested binary inside payload (`1.1.0-develop` exit code 0).
   * **Generic Linux x86_64 Standalone**: Packaged `Shulk-1.1.0-Linux-x86_64.tar.gz` (178 MB) with standalone launcher binary and resource shares.
 - **Published GitHub Release**:
-  * Created public GitHub Release **v1.1.0** ("Shulk v1.1.0 - Handheld Polish, Recent Servers & In-App Updater", Release ID 386649336) on live main repository `NaiSenshin/Shulk`.
+  * Created public GitHub Release **v1.1.0** ("Shulk v1.1.0", Release ID 386649336) on live main repository `NaiSenshin/Shulk` with human-written, non-marketing patch notes matching the style of v1.0.0.
   * Uploaded all 3 release packages matching auto-updater detection patterns:
     1. `Shulk-1.1.0-Windows-x64.zip` (Asset ID: 555899234)
     2. `Shulk-1.1.0-SteamOS-Bazzite-Installer.tar.gz` (Asset ID: 555899484)
