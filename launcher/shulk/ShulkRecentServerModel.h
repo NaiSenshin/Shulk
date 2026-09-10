@@ -80,6 +80,7 @@ public:
 
     // Populate metadata from instance's servers.dat if available
     void enrichFromServersDat(const QString& instanceId, const QString& serverAddress);
+    Q_INVOKABLE void scanAllInstancesForServers();
 
     void pingServer(int index);
     void pingAll();

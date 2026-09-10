@@ -39,6 +39,10 @@ class ShulkLauncherController : public QObject {
     Q_PROPERTY(QString updateStatusMessage READ updateStatusMessage NOTIFY updateStatusChanged)
     Q_PROPERTY(QString updateChannel READ updateChannel WRITE setUpdateChannel NOTIFY updateChannelChanged)
     Q_PROPERTY(QString devToken READ devToken WRITE setDevToken NOTIFY devTokenChanged)
+    Q_PROPERTY(bool isDownloadingUpdate READ isDownloadingUpdate NOTIFY updateStatusChanged)
+    Q_PROPERTY(int updateDownloadProgress READ updateDownloadProgress NOTIFY updateStatusChanged)
+    Q_PROPERTY(bool updateDownloaded READ updateDownloaded NOTIFY updateStatusChanged)
+    Q_PROPERTY(qint64 updateAssetSize READ updateAssetSize NOTIFY updateStatusChanged)
 
 public:
     enum LaunchState {
@@ -71,7 +75,7 @@ public:
 
     Q_INVOKABLE void launch(const QString& instanceId);
     Q_INVOKABLE void launchServer(const QString& instanceId, const QString& serverAddress);
-    void setRecentServerModel(class ShulkRecentServerModel* model) { m_recentServerModel = model; }
+    void setRecentServerModel(class ShulkRecentServerModel* model);
     Q_INVOKABLE void kill(const QString& instanceId);
     Q_INVOKABLE void deleteProfile(const QString& instanceId);
     Q_INVOKABLE void duplicateProfile(const QString& instanceId, const QString& newName);
@@ -106,9 +110,17 @@ public:
     void setUpdateChannel(const QString& channel);
     QString devToken() const { return m_devToken; }
     void setDevToken(const QString& token);
+    bool isDownloadingUpdate() const { return m_isDownloadingUpdate; }
+    int updateDownloadProgress() const { return m_updateDownloadProgress; }
+    bool updateDownloaded() const { return m_updateDownloaded; }
+    qint64 updateAssetSize() const { return m_updateAssetSize; }
+    QString installedVersionTag() const;
 
     Q_INVOKABLE void checkForUpdates(bool userTriggered = true);
     Q_INVOKABLE void openUpdateDownload();
+    Q_INVOKABLE void startUpdateDownload();
+    Q_INVOKABLE void cancelUpdateDownload();
+    Q_INVOKABLE void applyUpdate();
 
 signals:
     void isAnyInstanceRunningChanged();
@@ -158,6 +170,15 @@ private:
     QString m_updateStatusMessage;
     QString m_updateChannel = "stable"; // "stable" or "development"
     QString m_devToken;
+
+    bool m_isDownloadingUpdate = false;
+    int m_updateDownloadProgress = 0;
+    bool m_updateDownloaded = false;
+    qint64 m_updateAssetSize = 0;
+    QString m_updateAssetApiUrl;
+    QString m_updateAssetFileName;
+    class QNetworkReply* m_downloadReply = nullptr;
+    class QFile* m_downloadFile = nullptr;
 
     class ShulkRecentServerModel* m_recentServerModel = nullptr;
 };

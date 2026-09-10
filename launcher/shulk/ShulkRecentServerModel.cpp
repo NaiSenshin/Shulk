@@ -76,6 +76,7 @@ ShulkRecentServerModel::ShulkRecentServerModel(QObject* parent)
     : QAbstractListModel(parent)
 {
     loadHistory();
+    scanAllInstancesForServers();
     for (const auto& entry : m_entries) {
         enrichFromServersDat(entry.instanceId, entry.serverAddress);
     }
@@ -410,6 +411,7 @@ void ShulkRecentServerModel::refresh()
 {
     beginResetModel();
     loadHistory();
+    scanAllInstancesForServers();
     for (const auto& entry : m_entries) {
         enrichFromServersDat(entry.instanceId, entry.serverAddress);
     }
@@ -551,6 +553,112 @@ void ShulkRecentServerModel::enrichFromServersDat(const QString& instanceId, con
                 emit serversChanged();
             }
             break;
+        }
+    }
+}
+
+void ShulkRecentServerModel::scanAllInstancesForServers()
+{
+    if (!APPLICATION || !APPLICATION->instances())
+        return;
+
+    auto instances = APPLICATION->instances();
+    int totalInst = instances->count();
+    bool anyChanged = false;
+
+    for (int i = 0; i < totalInst; ++i) {
+        auto inst = instances->at(i);
+        if (!inst)
+            continue;
+
+        QString instId = inst->id();
+        QString serversDatPath = FS::PathCombine(inst->gameRoot(), "servers.dat");
+        if (!QFileInfo::exists(serversDatPath))
+            continue;
+
+        auto nbtCompound = parseServersDatFile(serversDatPath);
+        if (!nbtCompound || !nbtCompound->has_key("servers", nbt::tag_type::List))
+            continue;
+
+        auto& serversList = nbtCompound->at("servers").as<nbt::tag_list>();
+        int sIdx = 0;
+        for (auto iter = serversList.begin(); iter != serversList.end(); ++iter, ++sIdx) {
+            if ((*iter).get_type() != nbt::tag_type::Compound)
+                continue;
+
+            auto& sTag = (*iter).as<nbt::tag_compound>();
+            if (!sTag.has_key("ip", nbt::tag_type::String))
+                continue;
+
+            std::string ipStr(sTag["ip"]);
+            QString foundIp = QString::fromUtf8(ipStr.c_str()).trimmed();
+            if (foundIp.isEmpty())
+                continue;
+
+            QString friendlyName;
+            if (sTag.has_key("name", nbt::tag_type::String)) {
+                std::string nameStr(sTag["name"]);
+                friendlyName = QString::fromUtf8(nameStr.c_str()).trimmed();
+            }
+
+            QByteArray icon;
+            if (sTag.has_key("icon", nbt::tag_type::String)) {
+                std::string base64Str(sTag["icon"]);
+                icon = QByteArray::fromBase64(base64Str.c_str());
+            }
+
+            // Check if already in m_entries
+            bool found = false;
+            for (auto& entry : m_entries) {
+                QString normalizedEntry = entry.serverAddress;
+                QString normalizedFound = foundIp;
+                if (normalizedEntry.endsWith(":25565")) normalizedEntry.chop(6);
+                if (normalizedFound.endsWith(":25565")) normalizedFound.chop(6);
+
+                if (entry.instanceId == instId && normalizedEntry.compare(normalizedFound, Qt::CaseInsensitive) == 0) {
+                    found = true;
+                    if (!friendlyName.isEmpty() && friendlyName != "Minecraft Server" && entry.serverName != friendlyName) {
+                        entry.serverName = friendlyName;
+                        anyChanged = true;
+                    }
+                    if (!icon.isEmpty() && entry.iconBytes != icon) {
+                        entry.iconBytes = icon;
+                        entry.iconRevision++;
+                        anyChanged = true;
+                    }
+                    break;
+                }
+            }
+
+            if (!found) {
+                ShulkRecentServerEntry newEntry;
+                newEntry.instanceId = instId;
+                newEntry.serverAddress = foundIp;
+                newEntry.serverName = !friendlyName.isEmpty() ? friendlyName : foundIp;
+                newEntry.iconBytes = icon;
+                qint64 fileTime = QFileInfo(serversDatPath).lastModified().toSecsSinceEpoch();
+                newEntry.lastPlayedTime = fileTime - (sIdx * 60);
+                m_entries.append(newEntry);
+                anyChanged = true;
+            }
+        }
+    }
+
+    if (anyChanged) {
+        // Sort m_entries by lastPlayedTime descending
+        std::sort(m_entries.begin(), m_entries.end(), [](const ShulkRecentServerEntry& a, const ShulkRecentServerEntry& b) {
+            return a.lastPlayedTime > b.lastPlayedTime;
+        });
+
+        while (m_entries.size() > 10) {
+            m_entries.removeLast();
+        }
+
+        saveHistory();
+        emit countChanged();
+        emit serversChanged();
+        if (!m_entries.isEmpty()) {
+            emit dataChanged(index(0, 0), index(rowCount() - 1, 0));
         }
     }
 }

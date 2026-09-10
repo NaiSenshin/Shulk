@@ -309,24 +309,24 @@ void ShulkInputManager::handleAxisEvent(int axis, int value)
             m_stickDownActive = false;
         }
     } else if (axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT) {
-        const int TRIGGER_DEADZONE = 16000;
-        bool pressed = value > TRIGGER_DEADZONE;
-        if (pressed && !m_triggerLeftActive) {
+        const int PRESS_THRESHOLD = 8000;
+        const int RELEASE_THRESHOLD = 4000;
+        if (value > PRESS_THRESHOLD && !m_triggerLeftActive) {
             setInputMode(Controller);
             m_triggerLeftActive = true;
             emit actionTriggered(ActionTriggerLeft);
-        } else if (!pressed && m_triggerLeftActive) {
+        } else if (value < RELEASE_THRESHOLD && m_triggerLeftActive) {
             m_triggerLeftActive = false;
             emit actionReleased(ActionTriggerLeft);
         }
     } else if (axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT) {
-        const int TRIGGER_DEADZONE = 16000;
-        bool pressed = value > TRIGGER_DEADZONE;
-        if (pressed && !m_triggerRightActive) {
+        const int PRESS_THRESHOLD = 8000;
+        const int RELEASE_THRESHOLD = 4000;
+        if (value > PRESS_THRESHOLD && !m_triggerRightActive) {
             setInputMode(Controller);
             m_triggerRightActive = true;
             emit actionTriggered(ActionTriggerRight);
-        } else if (!pressed && m_triggerRightActive) {
+        } else if (value < RELEASE_THRESHOLD && m_triggerRightActive) {
             m_triggerRightActive = false;
             emit actionReleased(ActionTriggerRight);
         }

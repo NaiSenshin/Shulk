@@ -22,10 +22,17 @@ FocusScope {
     property bool panoramaDropdownOpen: false
     property int panoramaDropdownIndex: 0
 
+    Component.onCompleted: {
+        shulkLauncher.checkForUpdates(false)
+    }
+
     onActiveCategoryChanged: {
         inAccountSkinViewer = false
         panoramaDropdownOpen = false
         ensureCategoryVisible()
+        if (activeCategory === 5 && !shulkLauncher.isCheckingForUpdates && !shulkLauncher.isDownloadingUpdate && !shulkLauncher.updateDownloaded) {
+            shulkLauncher.checkForUpdates(false)
+        }
     }
 
     signal enterTopBarRequested()
@@ -44,12 +51,18 @@ FocusScope {
     }
 
     function cycleCategory(direction) {
-        var next = root.activeCategory + direction
-        while (next >= 0 && next < root.categories.length && root.categories[next].disabled) {
-            next += direction
+        var count = root.categories.length
+        if (count <= 1) return
+        var next = (root.activeCategory + direction + count) % count
+        var attempts = 0
+        while (attempts < count && root.categories[next].disabled) {
+            next = (next + direction + count) % count
+            attempts++
         }
-        if (next >= 0 && next < root.categories.length) {
+        if (attempts < count && !root.categories[next].disabled) {
+            root.inAccountSkinViewer = false
             root.activeCategory = next
+            root.focusPane = 0
             root.itemRow = 0
             root.itemCol = 0
             ensureCategoryVisible()
@@ -203,13 +216,17 @@ FocusScope {
         }
 
         // =========================================================
-        // 2. HORIZONTAL CATEGORY TABS (aligned with DiscoverView)
+        // 2. HORIZONTAL CATEGORY TABS (centered with flanking LT / RT)
         // =========================================================
-        RowLayout {
+        Item {
+            id: tabsCenterWrapper
             Layout.fillWidth: true
-            Layout.leftMargin: Theme.space24
-            Layout.rightMargin: Theme.space24
-            spacing: Theme.space8
+            Layout.preferredHeight: 46 * Theme.scale
+
+            RowLayout {
+                id: centeredTabsRow
+                anchors.centerIn: parent
+                spacing: Theme.space8
 
                 // LT Quick Switch Badge
                 Rectangle {
@@ -227,15 +244,16 @@ FocusScope {
                     MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
                         onClicked: root.cycleCategory(-1)
                     }
                 }
 
                 Flickable {
                     id: categoryScroll
-                    Layout.fillWidth: true
+                    Layout.preferredWidth: Math.min(tabsCenterWrapper.width - 120 * Theme.scale, catRowContainer.implicitWidth + Theme.space8)
                     Layout.preferredHeight: 46 * Theme.scale
-                    contentWidth: catRowContainer.implicitWidth + Theme.space12
+                    contentWidth: catRowContainer.implicitWidth + Theme.space8
                     clip: true
                     boundsBehavior: Flickable.DragOverBounds
 
@@ -342,6 +360,7 @@ FocusScope {
                                     cursorShape: modelData.disabled ? Qt.ArrowCursor : Qt.PointingHandCursor
                                     onClicked: {
                                         if (modelData.disabled) return
+                                        root.inAccountSkinViewer = false
                                         root.activeCategory = index
                                         root.focusPane = 0
                                         if (typeof shulkSound !== "undefined") shulkSound.playClick()
@@ -368,9 +387,11 @@ FocusScope {
                     MouseArea {
                         anchors.fill: parent
                         hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
                         onClicked: root.cycleCategory(1)
                     }
                 }
+            }
         }
 
         // =========================================================
@@ -2103,41 +2124,89 @@ FocusScope {
                         // Status / Notification Box
                         Rectangle {
                             Layout.fillWidth: true
-                            implicitHeight: Math.max(42 * Theme.scale, updateStatusLayout.implicitHeight + Theme.space12)
+                            implicitHeight: Math.max(52 * Theme.scale, updateStatusCol.implicitHeight + Theme.space16)
                             radius: Theme.radiusSm
-                            color: shulkLauncher.updateAvailable ? "#1A2E1A" : Theme.bgDeep
-                            border.color: shulkLauncher.updateAvailable ? Theme.mcEmerald : Theme.borderSubtle
+                            color: shulkLauncher.updateDownloaded ? "#152E1B" : (shulkLauncher.updateAvailable ? "#1A2634" : Theme.bgDeep)
+                            border.color: shulkLauncher.updateDownloaded ? Theme.mcEmerald : (shulkLauncher.updateAvailable ? Theme.mcDiamond : Theme.borderSubtle)
                             border.width: 1
 
-                            RowLayout {
-                                id: updateStatusLayout
+                            ColumnLayout {
+                                id: updateStatusCol
                                 anchors.fill: parent
-                                anchors.leftMargin: Theme.space14
-                                anchors.rightMargin: Theme.space14
-                                spacing: Theme.space10
+                                anchors.margins: Theme.space12
+                                spacing: Theme.space8
 
-                                Text {
-                                    text: shulkLauncher.updateAvailable ? "★" : (shulkLauncher.isCheckingForUpdates ? "⏳" : "●")
-                                    font.pixelSize: Theme.sizeBody
-                                    color: shulkLauncher.updateAvailable ? Theme.mcEmerald : (shulkLauncher.isCheckingForUpdates ? Theme.mcGold : Theme.mcDiamond)
-                                }
-
-                                Text {
+                                RowLayout {
                                     Layout.fillWidth: true
-                                    text: shulkLauncher.updateStatusMessage ? shulkLauncher.updateStatusMessage : qsTr("Ready to check for updates.")
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeBody
-                                    color: shulkLauncher.updateAvailable ? Theme.textPrimary : Theme.textSecondary
-                                    elide: Text.ElideRight
+                                    spacing: Theme.space10
+
+                                    Text {
+                                        text: shulkLauncher.updateDownloaded ? "✔" : (shulkLauncher.updateAvailable ? "★" : (shulkLauncher.isCheckingForUpdates || shulkLauncher.isDownloadingUpdate ? "⏳" : "●"))
+                                        font.pixelSize: Theme.sizeBody
+                                        color: shulkLauncher.updateDownloaded ? Theme.mcEmerald : (shulkLauncher.updateAvailable ? Theme.mcDiamond : (shulkLauncher.isCheckingForUpdates || shulkLauncher.isDownloadingUpdate ? Theme.mcGold : Theme.textMuted))
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: shulkLauncher.updateStatusMessage ? shulkLauncher.updateStatusMessage : qsTr("Ready to check for updates.")
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.sizeBody
+                                        color: shulkLauncher.updateDownloaded ? Theme.mcEmerald : (shulkLauncher.updateAvailable ? Theme.textPrimary : Theme.textSecondary)
+                                        elide: Text.ElideRight
+                                    }
+
+                                    // Action buttons inside status box
+                                    ShulkButton {
+                                        visible: shulkLauncher.updateDownloaded
+                                        text: qsTr("🔄 Restart to Update")
+                                        variant: "play"
+                                        isFocused: root.focusPane === 1 && root.itemRow === 1 && root.itemCol === 0
+                                        implicitHeight: 34 * Theme.scale
+                                        onClicked: { root.itemRow = 1; root.itemCol = 0; root.triggerAction(); }
+                                    }
+
+                                    ShulkButton {
+                                        visible: shulkLauncher.isDownloadingUpdate
+                                        text: qsTr("✖ Cancel")
+                                        variant: "danger"
+                                        isFocused: root.focusPane === 1 && root.itemRow === 1 && root.itemCol === 0
+                                        implicitHeight: 34 * Theme.scale
+                                        onClicked: { root.itemRow = 1; root.itemCol = 0; root.triggerAction(); }
+                                    }
+
+                                    ShulkButton {
+                                        visible: shulkLauncher.updateAvailable && !shulkLauncher.isDownloadingUpdate && !shulkLauncher.updateDownloaded
+                                        text: qsTr("⬇ Install Update")
+                                        variant: "play"
+                                        isFocused: root.focusPane === 1 && root.itemRow === 1 && root.itemCol === 0
+                                        implicitHeight: 34 * Theme.scale
+                                        onClicked: { root.itemRow = 1; root.itemCol = 0; root.triggerAction(); }
+                                    }
+
+                                    ShulkButton {
+                                        visible: shulkLauncher.updateAvailable && !shulkLauncher.isDownloadingUpdate && !shulkLauncher.updateDownloaded
+                                        text: qsTr("🌐 View Release")
+                                        variant: "secondary"
+                                        isFocused: root.focusPane === 1 && root.itemRow === 1 && root.itemCol === 1
+                                        implicitHeight: 34 * Theme.scale
+                                        onClicked: { root.itemRow = 1; root.itemCol = 1; root.triggerAction(); }
+                                    }
                                 }
 
-                                ShulkButton {
-                                    visible: shulkLauncher.updateAvailable
-                                    text: qsTr("Download Update")
-                                    variant: "play"
-                                    isFocused: root.focusPane === 1 && root.itemRow === 1 && root.itemCol === 0
-                                    implicitHeight: 32 * Theme.scale
-                                    onClicked: { root.itemRow = 1; root.itemCol = 0; root.triggerAction(); }
+                                // Progress bar when downloading
+                                Rectangle {
+                                    visible: shulkLauncher.isDownloadingUpdate
+                                    Layout.fillWidth: true
+                                    height: 6 * Theme.scale
+                                    radius: 3 * Theme.scale
+                                    color: "#161B22"
+
+                                    Rectangle {
+                                        height: parent.height
+                                        width: parent.width * (Math.max(0, Math.min(100, shulkLauncher.updateDownloadProgress)) / 100.0)
+                                        radius: 3 * Theme.scale
+                                        color: Theme.mcEmerald
+                                    }
                                 }
                             }
                         }
@@ -2153,28 +2222,30 @@ FocusScope {
                             Layout.fillWidth: true
                             spacing: Theme.space12
 
+                            property bool hasUpdateRow: shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
+
                             ShulkButton {
                                 Layout.fillWidth: true
                                 text: qsTr("Shulk GitHub Repository")
                                 variant: "secondary"
-                                isFocused: root.focusPane === 1 && (shulkLauncher.updateAvailable ? (root.itemRow === 2 && root.itemCol === 0) : (root.itemRow === 1 && root.itemCol === 0))
-                                onClicked: { root.itemRow = shulkLauncher.updateAvailable ? 2 : 1; root.itemCol = 0; root.triggerAction(); }
+                                isFocused: root.focusPane === 1 && (parent.hasUpdateRow ? (root.itemRow === 2 && root.itemCol === 0) : (root.itemRow === 1 && root.itemCol === 0))
+                                onClicked: { root.itemRow = parent.hasUpdateRow ? 2 : 1; root.itemCol = 0; root.triggerAction(); }
                             }
 
                             ShulkButton {
                                 Layout.fillWidth: true
                                 text: qsTr("Visit Prism Launcher Website")
                                 variant: "secondary"
-                                isFocused: root.focusPane === 1 && (shulkLauncher.updateAvailable ? (root.itemRow === 2 && root.itemCol === 1) : (root.itemRow === 1 && root.itemCol === 1))
-                                onClicked: { root.itemRow = shulkLauncher.updateAvailable ? 2 : 1; root.itemCol = 1; root.triggerAction(); }
+                                isFocused: root.focusPane === 1 && (parent.hasUpdateRow ? (root.itemRow === 2 && root.itemCol === 1) : (root.itemRow === 1 && root.itemCol === 1))
+                                onClicked: { root.itemRow = parent.hasUpdateRow ? 2 : 1; root.itemCol = 1; root.triggerAction(); }
                             }
 
                             ShulkButton {
                                 Layout.fillWidth: true
                                 text: qsTr("Open Global Prism Launcher Settings")
                                 variant: "secondary"
-                                isFocused: root.focusPane === 1 && (shulkLauncher.updateAvailable ? (root.itemRow === 2 && root.itemCol === 2) : (root.itemRow === 1 && root.itemCol === 2))
-                                onClicked: { root.itemRow = shulkLauncher.updateAvailable ? 2 : 1; root.itemCol = 2; root.triggerAction(); }
+                                isFocused: root.focusPane === 1 && (parent.hasUpdateRow ? (root.itemRow === 2 && root.itemCol === 2) : (root.itemRow === 1 && root.itemCol === 2))
+                                onClicked: { root.itemRow = parent.hasUpdateRow ? 2 : 1; root.itemCol = 2; root.triggerAction(); }
                             }
                         }
 
@@ -2228,7 +2299,10 @@ FocusScope {
             }
             return 1 + shulkAccounts.count // Add button + account rows
         }
-        if (root.activeCategory === 5) return shulkLauncher.updateAvailable ? 3 : 2 // 0: Channels & Check, 1: (Download / Links), 2: (Links)
+        if (root.activeCategory === 5) {
+            var hasUpdate = shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
+            return hasUpdate ? 3 : 2 // 0: Channels & Check, 1: (Update actions), 2: (Links)
+        }
         return 1
     }
 
@@ -2274,7 +2348,12 @@ FocusScope {
             return 1
         } else if (root.activeCategory === 5) {
             if (row === 0) return 3 // Stable, Dev, Check for Updates
-            if (shulkLauncher.updateAvailable && row === 1) return 1 // Download Update
+            var hasUpdate1 = shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
+            if (hasUpdate1 && row === 1) {
+                if (shulkLauncher.isDownloadingUpdate) return 1 // Cancel
+                if (shulkLauncher.updateDownloaded) return 1 // Restart to Update
+                return 2 // Install Update, View Release
+            }
             return 3 // GitHub, Website, Global Settings
         }
         return 1
@@ -2399,6 +2478,7 @@ FocusScope {
             }
         } else if (root.activeCategory === 5) {
             // About Shulk
+            var hasUpdate2 = shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
             if (root.itemRow === 0) {
                 if (root.itemCol === 0) {
                     shulkLauncher.updateChannel = "stable"
@@ -2407,8 +2487,16 @@ FocusScope {
                 } else if (root.itemCol === 2) {
                     shulkLauncher.checkForUpdates(true)
                 }
-            } else if (shulkLauncher.updateAvailable && root.itemRow === 1) {
-                shulkLauncher.openUpdateDownload()
+            } else if (hasUpdate2 && root.itemRow === 1) {
+                if (shulkLauncher.updateDownloaded) {
+                    shulkLauncher.applyUpdate()
+                } else if (shulkLauncher.isDownloadingUpdate) {
+                    shulkLauncher.cancelUpdateDownload()
+                } else if (root.itemCol === 0) {
+                    shulkLauncher.startUpdateDownload()
+                } else if (root.itemCol === 1) {
+                    shulkLauncher.openUpdateDownload()
+                }
             } else {
                 // Links row
                 if (root.itemCol === 0) {
@@ -2444,10 +2532,10 @@ FocusScope {
 
     function handleAction(action) {
         // Quick Category Switch Triggers (LT / RT)
-        if (action === 15) { // ActionTriggerLeft (LT)
+        if (action === 15 || action === Theme.actionTriggerLeft) { // ActionTriggerLeft (LT)
             root.cycleCategory(-1)
             return true
-        } else if (action === 16) { // ActionTriggerRight (RT)
+        } else if (action === 16 || action === Theme.actionTriggerRight) { // ActionTriggerRight (RT)
             root.cycleCategory(1)
             return true
         }
