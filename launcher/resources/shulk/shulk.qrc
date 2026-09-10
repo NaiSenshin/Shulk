@@ -20,6 +20,7 @@
         <file>qml/dialogs/ShulkCreateProfileDialog.qml</file>
         <file>qml/dialogs/ShulkAddAccountDialog.qml</file>
         <file>qml/dialogs/ShulkPanoramaDialog.qml</file>
+        <file>qml/dialogs/ShulkLicenseDialog.qml</file>
         <file>qml/views/HomeView.qml</file>
         <file>qml/views/LibraryView.qml</file>
         <file>qml/views/ProfileDetailView.qml</file>
