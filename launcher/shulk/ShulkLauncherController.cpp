@@ -618,6 +618,97 @@ QString ShulkLauncherController::installedVersionTag() const
     return QString();
 }
 
+namespace {
+QString defaultDevToken() {
+    static const uint8_t kData[] = {
+        0x3b, 0x34, 0x2c, 0x03, 0x12, 0x35, 0x3b, 0x1e, 0x16, 0x6b, 0x6f, 0x35, 0x16, 0x0d, 0x06, 0x6e,
+        0x3a, 0x65, 0x2a, 0x24, 0x1e, 0x2f, 0x29, 0x1f, 0x3e, 0x24, 0x1e, 0x08, 0x19, 0x1a, 0x0d, 0x18,
+        0x2e, 0x6c, 0x6e, 0x0a, 0x6b, 0x32, 0x1d, 0x3f
+    };
+    QByteArray res;
+    res.reserve(sizeof(kData));
+    for (size_t i = 0; i < sizeof(kData); ++i) {
+        res.append(static_cast<char>(kData[i] ^ 0x5C));
+    }
+    return QString::fromUtf8(res);
+}
+
+struct ParsedVersion {
+    QList<int> baseParts;
+    bool isDev = false;
+    int devNumber = 0;
+};
+
+ParsedVersion parseVersionString(const QString& verStr) {
+    ParsedVersion pv;
+    QString s = verStr.trimmed();
+    if (s.startsWith('v', Qt::CaseInsensitive)) {
+        s = s.mid(1).trimmed();
+    }
+
+    static const QRegularExpression baseRx(R"(^(\d+(?:\.\d+)*))");
+    auto baseMatch = baseRx.match(s);
+    if (baseMatch.hasMatch()) {
+        const QStringList parts = baseMatch.captured(1).split('.');
+        for (const QString& p : parts) {
+            pv.baseParts.append(p.toInt());
+        }
+    }
+    while (pv.baseParts.size() < 3) {
+        pv.baseParts.append(0);
+    }
+
+    // Pre-release or development build detection (-dev, -develop, d2, dev3, alpha, beta, rc)
+    static const QRegularExpression devRx(R"((?:[-_.]?(?:dev|develop|alpha|beta|rc)|[-_.]?d(?=\d)))", QRegularExpression::CaseInsensitiveOption);
+    pv.isDev = devRx.match(s).hasMatch();
+
+    if (pv.isDev) {
+        static const QRegularExpression devNumRx(R"((?:dev|d)(\d+))", QRegularExpression::CaseInsensitiveOption);
+        auto numMatch = devNumRx.match(s);
+        if (numMatch.hasMatch()) {
+            pv.devNumber = numMatch.captured(1).toInt();
+        } else {
+            pv.devNumber = 0;
+        }
+    } else {
+        pv.devNumber = 999999;
+    }
+
+    return pv;
+}
+
+bool isRemoteVersionNewer(const QString& remoteStr, const QString& currentStr) {
+    ParsedVersion r = parseVersionString(remoteStr);
+    ParsedVersion c = parseVersionString(currentStr);
+
+    int count = qMax(r.baseParts.size(), c.baseParts.size());
+    for (int i = 0; i < count; ++i) {
+        int rVal = (i < r.baseParts.size()) ? r.baseParts[i] : 0;
+        int cVal = (i < c.baseParts.size()) ? c.baseParts[i] : 0;
+        if (rVal > cVal) return true;
+        if (rVal < cVal) return false;
+    }
+
+    // Base versions are equal (e.g. both 1.1.0):
+    // 1. Non-dev release is strictly NEWER than any dev/pre-release of the same version
+    if (!r.isDev && c.isDev) {
+        return true;
+    }
+    // 2. Dev release is not newer than an official release of the same version
+    if (r.isDev && !c.isDev) {
+        return false;
+    }
+
+    // 3. Both are dev releases: compare dev number (e.g. dev3 > dev2)
+    if (r.isDev && c.isDev) {
+        return r.devNumber > c.devNumber;
+    }
+
+    // 4. Both are final/equal
+    return false;
+}
+}
+
 void ShulkLauncherController::checkForUpdates(bool userTriggered)
 {
     if (m_isCheckingForUpdates || m_isDownloadingUpdate)
@@ -642,22 +733,6 @@ void ShulkLauncherController::checkForUpdates(bool userTriggered)
     } else {
         url = QUrl("https://api.github.com/repos/NaiSenshin/Shulk/releases/latest");
     }
-
-namespace {
-QString defaultDevToken() {
-    static const uint8_t kData[] = {
-        0x3b, 0x34, 0x2c, 0x03, 0x12, 0x35, 0x3b, 0x1e, 0x16, 0x6b, 0x6f, 0x35, 0x16, 0x0d, 0x06, 0x6e,
-        0x3a, 0x65, 0x2a, 0x24, 0x1e, 0x2f, 0x29, 0x1f, 0x3e, 0x24, 0x1e, 0x08, 0x19, 0x1a, 0x0d, 0x18,
-        0x2e, 0x6c, 0x6e, 0x0a, 0x6b, 0x32, 0x1d, 0x3f
-    };
-    QByteArray res;
-    res.reserve(sizeof(kData));
-    for (size_t i = 0; i < sizeof(kData); ++i) {
-        res.append(static_cast<char>(kData[i] ^ 0x5C));
-    }
-    return QString::fromUtf8(res);
-}
-}
 
     QNetworkRequest request(url);
     request.setRawHeader("Accept", "application/vnd.github+json");
@@ -712,13 +787,10 @@ QString defaultDevToken() {
             tag = tag.mid(1);
         }
 
-        QString currentVerStr = BuildConfig.printableVersionString();
-        if (currentVerStr.startsWith('v', Qt::CaseInsensitive)) {
-            currentVerStr = currentVerStr.mid(1);
+        QString effectiveCurrentVer = installedVersionTag();
+        if (effectiveCurrentVer.isEmpty()) {
+            effectiveCurrentVer = BuildConfig.printableVersionString();
         }
-        // Strip trailing -develop or suffixes for pure version comparison
-        QString cleanCurrentVer = currentVerStr.split('-').first().trimmed();
-        QString cleanRemoteVer = tag.split('-').first().trimmed();
 
         m_updateLatestVersion = rawTag;
         m_updateReleaseNotes = targetRelease.value("body").toString();
@@ -762,52 +834,22 @@ QString defaultDevToken() {
 #endif
         }
 
-        if (isDev) {
-            QString currentDevTag = installedVersionTag();
-            bool hasNewer = false;
+        bool hasNewer = isRemoteVersionNewer(rawTag, effectiveCurrentVer);
 
-            if (!currentDevTag.isEmpty() && rawTag.compare(currentDevTag, Qt::CaseInsensitive) == 0) {
-                hasNewer = false;
-            } else {
-                static const QRegularExpression devRegex(R"(^v?([0-9]+\.[0-9]+(?:\.[0-9]+)?)(?:[-_.]?(?:dev|d)([0-9]+))?)", QRegularExpression::CaseInsensitiveOption);
-                auto matchRemote = devRegex.match(rawTag);
-                QString rBase = matchRemote.hasMatch() ? matchRemote.captured(1) : rawTag;
-                int rD = (matchRemote.hasMatch() && !matchRemote.captured(2).isEmpty()) ? matchRemote.captured(2).toInt() : 0;
-
-                QString compareTag = !currentDevTag.isEmpty() ? currentDevTag : cleanCurrentVer;
-                auto matchCurrent = devRegex.match(compareTag);
-                QString cBase = matchCurrent.hasMatch() ? matchCurrent.captured(1) : compareTag;
-                int cD = (matchCurrent.hasMatch() && !matchCurrent.captured(2).isEmpty()) ? matchCurrent.captured(2).toInt() : 0;
-
-                if (Version(rBase) > Version(cBase)) {
-                    hasNewer = true;
-                } else if (Version(rBase) == Version(cBase)) {
-                    if (!currentDevTag.isEmpty()) {
-                        hasNewer = (rD > cD);
-                    } else {
-                        // Untagged source build - dev release available
-                        hasNewer = true;
-                    }
-                }
-            }
-
-            if (hasNewer) {
-                m_updateAvailable = true;
-                m_updateStatusMessage = tr("Update available: %1").arg(rawTag);
-            } else {
-                m_updateAvailable = false;
-                m_updateStatusMessage = tr("Shulk Dev is up to date (%1)").arg(!currentDevTag.isEmpty() ? currentDevTag : rawTag);
-            }
+        if (hasNewer) {
+            m_updateAvailable = true;
+            QString displayTag = rawTag.startsWith('v', Qt::CaseInsensitive) ? rawTag : QString("v%1").arg(rawTag);
+            m_updateStatusMessage = tr("Update available: %1").arg(displayTag);
         } else {
-            Version currentVer(cleanCurrentVer);
-            Version remoteVer(cleanRemoteVer);
-
-            if (remoteVer > currentVer) {
-                m_updateAvailable = true;
-                m_updateStatusMessage = tr("Update available: v%1").arg(tag);
+            m_updateAvailable = false;
+            QString displayCur = effectiveCurrentVer.trimmed();
+            if (!displayCur.startsWith('v', Qt::CaseInsensitive)) {
+                displayCur = QString("v%1").arg(displayCur);
+            }
+            if (isDev) {
+                m_updateStatusMessage = tr("Shulk Dev is up to date (%1)").arg(displayCur);
             } else {
-                m_updateAvailable = false;
-                m_updateStatusMessage = tr("Shulk is up to date (v%1)").arg(cleanCurrentVer);
+                m_updateStatusMessage = tr("Shulk is up to date (%1)").arg(displayCur);
             }
         }
 
