@@ -8,7 +8,7 @@ FocusScope {
     id: root
 
     property int activeCategory: 0
-    property int focusPane: 0 // 0: Category Sidebar, 1: Settings Content
+    property int focusPane: 0
     property int itemRow: 0
     property int itemCol: 0
 
@@ -26,18 +26,42 @@ FocusScope {
         shulkLauncher.checkForUpdates(false)
     }
 
+    onItemRowChanged: {
+        updateContentScroll()
+    }
+
     onActiveCategoryChanged: {
         inAccountSkinViewer = false
         panoramaDropdownOpen = false
         ensureCategoryVisible()
-        if (activeCategory === 5 && !shulkLauncher.isCheckingForUpdates && !shulkLauncher.isDownloadingUpdate && !shulkLauncher.updateDownloaded) {
-            shulkLauncher.checkForUpdates(false)
+        if (activeCategory === 5) {
+            if (!shulkLauncher.isCheckingForUpdates && !shulkLauncher.isDownloadingUpdate && !shulkLauncher.updateDownloaded) {
+                shulkLauncher.checkForUpdates(false)
+            }
+        }
+        updateContentScroll()
+    }
+
+    function updateContentScroll() {
+        if (root.activeCategory === 5 && typeof aboutScrollView !== "undefined" && aboutScrollView && aboutScrollView.contentItem) {
+            var hasUpdate = shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
+            var licRow = hasUpdate ? 3 : 2
+            var linksRow = hasUpdate ? 2 : 1
+            if (root.itemRow === 0) {
+                aboutScrollView.contentItem.contentY = 0
+            } else if (root.itemRow >= licRow) {
+                aboutScrollView.contentItem.contentY = Math.max(0, aboutScrollView.contentItem.contentHeight - aboutScrollView.height)
+            } else if (root.itemRow === linksRow) {
+                var maxScroll = Math.max(0, aboutScrollView.contentItem.contentHeight - aboutScrollView.height)
+                aboutScrollView.contentItem.contentY = Math.min(maxScroll, maxScroll * 0.7)
+            }
         }
     }
 
     signal enterTopBarRequested()
     signal addAccountRequested()
     signal openPanoramaDialogRequested()
+    signal openLicenseDialogRequested()
     signal confirmRemoveAccountRequested(int index, string name)
 
     function ensureCategoryVisible() {
@@ -1961,8 +1985,11 @@ FocusScope {
                 // 5: ABOUT SHULK
                 // ---------------------------------------------------------
                 ScrollView {
+                    id: aboutScrollView
                     contentWidth: availableWidth
                     clip: true
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
+                    readonly property bool hasUpdateRow: shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
 
                     ColumnLayout {
                         width: parent.width
@@ -2222,30 +2249,28 @@ FocusScope {
                             Layout.fillWidth: true
                             spacing: Theme.space12
 
-                            property bool hasUpdateRow: shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
-
                             ShulkButton {
                                 Layout.fillWidth: true
                                 text: qsTr("Shulk GitHub Repository")
                                 variant: "secondary"
-                                isFocused: root.focusPane === 1 && (parent.hasUpdateRow ? (root.itemRow === 2 && root.itemCol === 0) : (root.itemRow === 1 && root.itemCol === 0))
-                                onClicked: { root.itemRow = parent.hasUpdateRow ? 2 : 1; root.itemCol = 0; root.triggerAction(); }
+                                isFocused: root.focusPane === 1 && (aboutScrollView.hasUpdateRow ? (root.itemRow === 2 && root.itemCol === 0) : (root.itemRow === 1 && root.itemCol === 0))
+                                onClicked: { root.itemRow = aboutScrollView.hasUpdateRow ? 2 : 1; root.itemCol = 0; root.triggerAction(); }
                             }
 
                             ShulkButton {
                                 Layout.fillWidth: true
                                 text: qsTr("Visit Prism Launcher Website")
                                 variant: "secondary"
-                                isFocused: root.focusPane === 1 && (parent.hasUpdateRow ? (root.itemRow === 2 && root.itemCol === 1) : (root.itemRow === 1 && root.itemCol === 1))
-                                onClicked: { root.itemRow = parent.hasUpdateRow ? 2 : 1; root.itemCol = 1; root.triggerAction(); }
+                                isFocused: root.focusPane === 1 && (aboutScrollView.hasUpdateRow ? (root.itemRow === 2 && root.itemCol === 1) : (root.itemRow === 1 && root.itemCol === 1))
+                                onClicked: { root.itemRow = aboutScrollView.hasUpdateRow ? 2 : 1; root.itemCol = 1; root.triggerAction(); }
                             }
 
                             ShulkButton {
                                 Layout.fillWidth: true
                                 text: qsTr("Open Global Prism Launcher Settings")
                                 variant: "secondary"
-                                isFocused: root.focusPane === 1 && (parent.hasUpdateRow ? (root.itemRow === 2 && root.itemCol === 2) : (root.itemRow === 1 && root.itemCol === 2))
-                                onClicked: { root.itemRow = parent.hasUpdateRow ? 2 : 1; root.itemCol = 2; root.triggerAction(); }
+                                isFocused: root.focusPane === 1 && (aboutScrollView.hasUpdateRow ? (root.itemRow === 2 && root.itemCol === 2) : (root.itemRow === 1 && root.itemCol === 2))
+                                onClicked: { root.itemRow = aboutScrollView.hasUpdateRow ? 2 : 1; root.itemCol = 2; root.triggerAction(); }
                             }
                         }
 
@@ -2253,30 +2278,108 @@ FocusScope {
                             Layout.fillWidth: true
                             height: 1
                             color: Theme.borderSubtle
-                            Layout.topMargin: Theme.space8
+                            Layout.topMargin: Theme.space4
                         }
 
-                        Item {
+                        // Open Source License & Attribution Card
+                        Rectangle {
                             Layout.fillWidth: true
-                            implicitHeight: aboutLicenseText.implicitHeight + Theme.fontShadowOffset
+                            implicitHeight: licenseCol.implicitHeight + Theme.space24
+                            radius: Theme.radiusMd
+                            color: Theme.bgDeep
+                            border.color: (root.focusPane === 1 && (aboutScrollView.hasUpdateRow ? root.itemRow === 3 : root.itemRow === 2)) ? Theme.mcDiamond : Theme.borderSubtle
+                            border.width: 1
 
-                            Text {
-                                x: Theme.fontShadowOffset
-                                y: Theme.fontShadowOffset
-                                width: aboutLicenseText.width
-                                height: aboutLicenseText.height
-                                text: aboutLicenseText.text
-                                font.pixelSize: Theme.sizeCaption
-                                color: Theme.fontShadowDark
-                                wrapMode: Text.WordWrap
-                            }
-
-                            Text {
-                                id: aboutLicenseText
+                            ColumnLayout {
+                                id: licenseCol
                                 anchors.fill: parent
-                                text: qsTr("Open Source License Attribution:\nShulk is licensed under GPL-3.0-only. Built using the mature C++ backend foundation developed by the Prism Launcher, PolyMC, and MultiMC contributors.\n\nCopyright (C) 2026 Shulk Contributors\nCopyright (C) 2022-2026 Prism Launcher Contributors\nCopyright (C) 2021-2022 PolyMC Contributors\nCopyright (C) 2012-2021 MultiMC Contributors")
-                                font.pixelSize: Theme.sizeCaption
-                                color: Theme.textMuted
+                                anchors.margins: Theme.space12
+                                spacing: Theme.space8
+
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: Theme.space12
+
+                                    Rectangle {
+                                        Layout.preferredWidth: 38 * Theme.scale
+                                        Layout.preferredHeight: 38 * Theme.scale
+                                        radius: Theme.radiusSm
+                                        color: "#1E2228"
+                                        border.color: Theme.borderSubtle
+                                        border.width: 1
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "📜"
+                                            font.pixelSize: 18 * Theme.scale
+                                        }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 2 * Theme.scale
+
+                                        Item {
+                                            implicitWidth: licHead.implicitWidth
+                                            implicitHeight: licHead.implicitHeight
+
+                                            Text {
+                                                x: Theme.fontShadowOffset
+                                                y: Theme.fontShadowOffset
+                                                text: licHead.text
+                                                font: licHead.font
+                                                color: Theme.fontShadowDark
+                                            }
+                                            Text {
+                                                id: licHead
+                                                text: qsTr("Open Source Licensing & Heritage")
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: Theme.sizeBody
+                                                font.bold: true
+                                                color: Theme.textPrimary
+                                            }
+                                        }
+
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: qsTr("Shulk is licensed under GPL-3.0-only. Built with Prism Launcher, PolyMC, and MultiMC foundation.")
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.sizeCaption
+                                            color: Theme.textSecondary
+                                            wrapMode: Text.WordWrap
+                                        }
+                                    }
+
+                                    ShulkButton {
+                                        Layout.preferredWidth: 230 * Theme.scale
+                                        implicitHeight: 38 * Theme.scale
+                                        text: qsTr("📜 View Licenses & Credits")
+                                        variant: (root.focusPane === 1 && (aboutScrollView.hasUpdateRow ? root.itemRow === 3 : root.itemRow === 2)) ? "play" : "secondary"
+                                        isFocused: root.focusPane === 1 && (aboutScrollView.hasUpdateRow ? root.itemRow === 3 : root.itemRow === 2)
+                                        onClicked: {
+                                            root.itemRow = aboutScrollView.hasUpdateRow ? 3 : 2
+                                            root.itemCol = 0
+                                            root.triggerAction()
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    Layout.fillWidth: true
+                                    height: 1
+                                    color: Theme.borderSubtle
+                                    Layout.topMargin: Theme.space4
+                                    Layout.bottomMargin: Theme.space2
+                                }
+
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: qsTr("Copyright (C) 2026 Shulk Contributors • Copyright (C) 2022-2026 Prism Launcher Contributors • Copyright (C) 2021-2022 PolyMC Contributors • Copyright (C) 2012-2021 MultiMC Contributors")
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.sizeCaption
+                                    color: Theme.textMuted
+                                    wrapMode: Text.WordWrap
+                                }
                             }
                         }
                     }
@@ -2301,7 +2404,7 @@ FocusScope {
         }
         if (root.activeCategory === 5) {
             var hasUpdate = shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
-            return hasUpdate ? 3 : 2 // 0: Channels & Check, 1: (Update actions), 2: (Links)
+            return hasUpdate ? 4 : 3 // 0: Channels & Check, 1: (Update actions), 2: Links, 3: Licenses
         }
         return 1
     }
@@ -2349,12 +2452,19 @@ FocusScope {
         } else if (root.activeCategory === 5) {
             if (row === 0) return 3 // Stable, Dev, Check for Updates
             var hasUpdate1 = shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
-            if (hasUpdate1 && row === 1) {
-                if (shulkLauncher.isDownloadingUpdate) return 1 // Cancel
-                if (shulkLauncher.updateDownloaded) return 1 // Restart to Update
-                return 2 // Install Update, View Release
+            if (hasUpdate1) {
+                if (row === 1) {
+                    if (shulkLauncher.isDownloadingUpdate) return 1 // Cancel
+                    if (shulkLauncher.updateDownloaded) return 1 // Restart to Update
+                    return 2 // Install Update, View Release
+                }
+                if (row === 2) return 3 // GitHub, Website, Global Settings
+                if (row === 3) return 1 // View Licenses & Credits button
+            } else {
+                if (row === 1) return 3 // GitHub, Website, Global Settings
+                if (row === 2) return 1 // View Licenses & Credits button
             }
-            return 3 // GitHub, Website, Global Settings
+            return 1
         }
         return 1
     }
@@ -2479,6 +2589,9 @@ FocusScope {
         } else if (root.activeCategory === 5) {
             // About Shulk
             var hasUpdate2 = shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
+            var linksRow = hasUpdate2 ? 2 : 1
+            var licRow = hasUpdate2 ? 3 : 2
+
             if (root.itemRow === 0) {
                 if (root.itemCol === 0) {
                     shulkLauncher.updateChannel = "stable"
@@ -2497,7 +2610,7 @@ FocusScope {
                 } else if (root.itemCol === 1) {
                     shulkLauncher.openUpdateDownload()
                 }
-            } else {
+            } else if (root.itemRow === linksRow) {
                 // Links row
                 if (root.itemCol === 0) {
                     Qt.openUrlExternally("https://github.com/NaiSenshin/Shulk")
@@ -2506,6 +2619,8 @@ FocusScope {
                 } else if (root.itemCol === 2) {
                     shulkLauncher.showGlobalSettings()
                 }
+            } else if (root.itemRow === licRow) {
+                root.openLicenseDialogRequested()
             }
         }
     }

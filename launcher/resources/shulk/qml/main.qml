@@ -86,6 +86,10 @@ ApplicationWindow {
                 panoramaDialog.handleAction(action)
                 return
             }
+            if (licenseDialog.visible) {
+                licenseDialog.handleAction(action)
+                return
+            }
 
             if (launchOverlay.visible) {
                 if (action === Theme.actionBack) {
@@ -383,6 +387,9 @@ ApplicationWindow {
                     onOpenPanoramaDialogRequested: {
                         panoramaDialog.open()
                     }
+                    onOpenLicenseDialogRequested: {
+                        licenseDialog.open()
+                    }
                     onConfirmRemoveAccountRequested: (index, name) => {
                         appWindow.pendingDeleteType = "account"
                         appWindow.pendingDeleteIndex = index
@@ -610,6 +617,11 @@ ApplicationWindow {
     // Panorama Selection Dialog
     ShulkPanoramaDialog {
         id: panoramaDialog
+    }
+
+    // License Attribution Dialog
+    ShulkLicenseDialog {
+        id: licenseDialog
     }
 
     // Dedicated launch surface. Keep this intentionally restrained: launching a
