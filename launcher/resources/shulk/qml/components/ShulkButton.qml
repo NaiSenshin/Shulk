@@ -82,14 +82,13 @@ FocusScope {
 
             Item {
                 readonly property int btnOffset: Theme.getShadowOffset(btnText.font.pixelSize)
-                readonly property int baselineAdj: Math.max(1, Math.round(btnText.font.pixelSize * 0.12))
-                implicitWidth: btnText.implicitWidth
-                implicitHeight: btnText.implicitHeight
+                width: btnText.implicitWidth
+                height: btnText.implicitHeight
                 anchors.verticalCenter: parent.verticalCenter
 
                 Text {
                     x: parent.btnOffset
-                    y: parent.btnOffset + parent.baselineAdj
+                    y: parent.btnOffset
                     text: root.text
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.sizeBody
@@ -99,7 +98,8 @@ FocusScope {
 
                 Text {
                     id: btnText
-                    y: parent.baselineAdj
+                    x: 0
+                    y: 0
                     text: root.text
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.sizeBody
@@ -118,14 +118,13 @@ FocusScope {
 
                 Item {
                     readonly property int scOffset: Theme.getShadowOffset(shortcutText.font.pixelSize)
-                    readonly property int scBaselineAdj: Math.max(1, Math.round(shortcutText.font.pixelSize * 0.12))
                     anchors.centerIn: parent
-                    implicitWidth: shortcutText.implicitWidth
-                    implicitHeight: shortcutText.implicitHeight
+                    width: shortcutText.implicitWidth
+                    height: shortcutText.implicitHeight
 
                     Text {
                         x: parent.scOffset
-                        y: parent.scOffset + parent.scBaselineAdj
+                        y: parent.scOffset
                         text: root.shortcutHint
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.sizeSmall
@@ -135,7 +134,8 @@ FocusScope {
 
                     Text {
                         id: shortcutText
-                        y: parent.scBaselineAdj
+                        x: 0
+                        y: 0
                         text: root.shortcutHint
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.sizeSmall

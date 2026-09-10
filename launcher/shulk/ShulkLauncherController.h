@@ -70,6 +70,8 @@ public:
     QString appVersion() const;
 
     Q_INVOKABLE void launch(const QString& instanceId);
+    Q_INVOKABLE void launchServer(const QString& instanceId, const QString& serverAddress);
+    void setRecentServerModel(class ShulkRecentServerModel* model) { m_recentServerModel = model; }
     Q_INVOKABLE void kill(const QString& instanceId);
     Q_INVOKABLE void deleteProfile(const QString& instanceId);
     Q_INVOKABLE void duplicateProfile(const QString& instanceId, const QString& newName);
@@ -156,4 +158,6 @@ private:
     QString m_updateStatusMessage;
     QString m_updateChannel = "stable"; // "stable" or "development"
     QString m_devToken;
+
+    class ShulkRecentServerModel* m_recentServerModel = nullptr;
 };

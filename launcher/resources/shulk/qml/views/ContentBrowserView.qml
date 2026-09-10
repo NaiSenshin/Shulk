@@ -139,10 +139,24 @@ FocusScope {
                     font.bold: true
                     color: Theme.textPrimary
                 }
-                Text {
-                    text: qsTr("Compatible with Minecraft %1 | %2").arg(root.profile ? root.profile.minecraftVersion : "").arg(root.profile ? root.profile.loaderType : "")
-                    font.pixelSize: Theme.sizeCaption
-                    color: Theme.textSecondary
+                Item {
+                    implicitWidth: subCompatText.implicitWidth
+                    implicitHeight: subCompatText.implicitHeight
+                    readonly property int off: Theme.getShadowOffset(subCompatText.font.pixelSize)
+
+                    Text {
+                        x: parent.off; y: parent.off
+                        text: subCompatText.text
+                        font: subCompatText.font
+                        color: Theme.getShadowColor(subCompatText.color)
+                    }
+                    Text {
+                        id: subCompatText
+                        x: 0; y: 0
+                        text: qsTr("Compatible with Minecraft %1 | %2").arg(root.profile ? root.profile.minecraftVersion : "").arg(root.profile ? root.profile.loaderType : "")
+                        font.pixelSize: Theme.sizeCaption
+                        color: Theme.textSecondary
+                    }
                 }
             }
         }
@@ -188,11 +202,25 @@ FocusScope {
             radius: 3
             color: root.errorMessage.length > 0 ? "#4A1F1F" : "#203D22"
             border.color: root.errorMessage.length > 0 ? Theme.accentDanger : Theme.accentPlay
-            Text {
+            Item {
                 anchors.centerIn: parent
-                text: root.errorMessage.length > 0 ? root.errorMessage : root.installedMessage
-                color: Theme.textPrimary
-                font.pixelSize: Theme.sizeCaption
+                implicitWidth: statusMsgText.implicitWidth
+                implicitHeight: statusMsgText.implicitHeight
+                readonly property int off: Theme.getShadowOffset(statusMsgText.font.pixelSize)
+
+                Text {
+                    x: parent.off; y: parent.off
+                    text: statusMsgText.text
+                    font: statusMsgText.font
+                    color: Theme.getShadowColor(statusMsgText.color)
+                }
+                Text {
+                    id: statusMsgText
+                    x: 0; y: 0
+                    text: root.errorMessage.length > 0 ? root.errorMessage : root.installedMessage
+                    color: Theme.textPrimary
+                    font.pixelSize: Theme.sizeCaption
+                }
             }
         }
 
@@ -267,31 +295,82 @@ FocusScope {
                                 Layout.fillHeight: true
                                 spacing: Theme.space4
 
-                                Text {
+                                Item {
                                     Layout.fillWidth: true
-                                    text: modelData.name
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.sizeBody
-                                    font.bold: true
-                                    color: Theme.textPrimary
-                                    elide: Text.ElideRight
+                                    implicitHeight: cardTitleText.implicitHeight
+                                    readonly property int off: Theme.getShadowOffset(cardTitleText.font.pixelSize)
+
+                                    Text {
+                                        x: parent.off; y: parent.off
+                                        width: parent.width
+                                        text: cardTitleText.text
+                                        font: cardTitleText.font
+                                        color: Theme.getShadowColor(cardTitleText.color)
+                                        elide: Text.ElideRight
+                                    }
+                                    Text {
+                                        id: cardTitleText
+                                        x: 0; y: 0
+                                        width: parent.width
+                                        text: modelData.name
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: Theme.sizeBody
+                                        font.bold: true
+                                        color: Theme.textPrimary
+                                        elide: Text.ElideRight
+                                    }
                                 }
-                                Text {
+
+                                Item {
                                     Layout.fillWidth: true
-                                    text: qsTr("By %1 | %2 downloads").arg(modelData.author).arg(modelData.downloads)
-                                    font.pixelSize: Theme.sizeSmall
-                                    color: Theme.textGold
-                                    elide: Text.ElideRight
+                                    implicitHeight: cardAuthorText.implicitHeight
+                                    readonly property int off: Theme.getShadowOffset(cardAuthorText.font.pixelSize)
+
+                                    Text {
+                                        x: parent.off; y: parent.off
+                                        width: parent.width
+                                        text: cardAuthorText.text
+                                        font: cardAuthorText.font
+                                        color: Theme.getShadowColor(cardAuthorText.color)
+                                        elide: Text.ElideRight
+                                    }
+                                    Text {
+                                        id: cardAuthorText
+                                        x: 0; y: 0
+                                        width: parent.width
+                                        text: qsTr("By %1 | %2 downloads").arg(modelData.author).arg(modelData.downloads)
+                                        font.pixelSize: Theme.sizeSmall
+                                        color: Theme.textGold
+                                        elide: Text.ElideRight
+                                    }
                                 }
-                                Text {
+
+                                Item {
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
-                                    text: modelData.description
-                                    font.pixelSize: Theme.sizeCaption
-                                    color: Theme.textSecondary
-                                    wrapMode: Text.WordWrap
-                                    elide: Text.ElideRight
-                                    maximumLineCount: 2
+                                    readonly property int off: Theme.getShadowOffset(cardDescText.font.pixelSize)
+
+                                    Text {
+                                        x: parent.off; y: parent.off
+                                        width: parent.width
+                                        text: cardDescText.text
+                                        font: cardDescText.font
+                                        color: Theme.getShadowColor(cardDescText.color)
+                                        wrapMode: Text.WordWrap
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 2
+                                    }
+                                    Text {
+                                        id: cardDescText
+                                        x: 0; y: 0
+                                        width: parent.width
+                                        text: modelData.description
+                                        font.pixelSize: Theme.sizeCaption
+                                        color: Theme.textSecondary
+                                        wrapMode: Text.WordWrap
+                                        elide: Text.ElideRight
+                                        maximumLineCount: 2
+                                    }
                                 }
                                 ShulkButton {
                                     Layout.alignment: Qt.AlignRight

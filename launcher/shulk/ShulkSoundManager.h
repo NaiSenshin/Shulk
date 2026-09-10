@@ -27,6 +27,7 @@ public:
         SoundDismiss,
         SoundOpen,
         SoundLevelUp,
+        SoundChallenge,
         SoundError
     };
     Q_ENUM(SoundType)
@@ -47,6 +48,8 @@ public:
     Q_INVOKABLE void playDismiss();
     Q_INVOKABLE void playOpen();
     Q_INVOKABLE void playLevelUp();
+    Q_INVOKABLE void playChallenge();
+    Q_INVOKABLE void playAchievement();
     Q_INVOKABLE void playError();
     Q_INVOKABLE void playSound(SoundType type);
 
@@ -64,6 +67,7 @@ private:
     int m_volume = 80; // 0 - 100
     unsigned int m_audioDeviceId = 0;
     bool m_audioReady = false;
+    qint64 m_achievementEndTime = 0;
 
     QHash<SoundType, QByteArray> m_soundBuffers;
 };

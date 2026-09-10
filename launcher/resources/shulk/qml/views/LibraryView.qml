@@ -116,7 +116,9 @@ FocusScope {
                         Text {
                             anchors.centerIn: parent
                             text: "X"
-                            font.pixelSize: 10 * Theme.scale
+                            font.family: Theme.fontDisplay
+                            font.pixelSize: 11 * Theme.scale
+                            font.bold: true
                             color: Theme.textMuted
                         }
 

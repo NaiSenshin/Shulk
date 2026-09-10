@@ -71,14 +71,6 @@ FocusScope {
     onProfileChanged: {
         if (contentModel && root.profile) {
             contentModel.instanceId = root.profile.id
-            contentModel.refreshAll()
-        }
-    }
-
-    Component.onCompleted: {
-        if (contentModel && root.profile) {
-            contentModel.instanceId = root.profile.id
-            contentModel.refreshAll()
         }
     }
 
@@ -189,21 +181,53 @@ FocusScope {
                     Layout.fillWidth: true
                     spacing: Theme.space4
 
-                    Text {
+                    Item {
                         Layout.fillWidth: true
-                        text: root.profile ? root.profile.name : qsTr("Installed Modpack")
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.sizeTitle
-                        font.bold: true
-                        color: Theme.textPrimary
-                        elide: Text.ElideRight
+                        implicitHeight: profNameText.implicitHeight
+                        readonly property int off: Theme.getShadowOffset(profNameText.font.pixelSize)
+
+                        Text {
+                            x: parent.off; y: parent.off
+                            width: parent.width
+                            text: profNameText.text
+                            font: profNameText.font
+                            color: Theme.getShadowColor(profNameText.color)
+                            elide: Text.ElideRight
+                        }
+                        Text {
+                            id: profNameText
+                            x: 0; y: 0
+                            width: parent.width
+                            text: root.profile ? root.profile.name : qsTr("Installed Modpack")
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeTitle
+                            font.bold: true
+                            color: Theme.textPrimary
+                            elide: Text.ElideRight
+                        }
                     }
 
-                    Text {
-                        text: root.profile && root.profile.authors ? qsTr("Installed profile by %1").arg(root.profile.authors) : qsTr("Installed Minecraft profile")
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.sizeBody
-                        color: Theme.textSecondary
+                    Item {
+                        Layout.fillWidth: true
+                        implicitHeight: profAuthorText.implicitHeight
+                        readonly property int off: Theme.getShadowOffset(profAuthorText.font.pixelSize)
+
+                        Text {
+                            x: parent.off; y: parent.off
+                            width: parent.width
+                            text: profAuthorText.text
+                            font: profAuthorText.font
+                            color: Theme.getShadowColor(profAuthorText.color)
+                        }
+                        Text {
+                            id: profAuthorText
+                            x: 0; y: 0
+                            width: parent.width
+                            text: root.profile && root.profile.authors ? qsTr("Installed profile by %1").arg(root.profile.authors) : qsTr("Installed Minecraft profile")
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeBody
+                            color: Theme.textSecondary
+                        }
                     }
 
                     RowLayout {
@@ -214,10 +238,24 @@ FocusScope {
                             text: root.profile ? (root.profile.loaderType + " " + root.profile.loaderVersion) : ""
                         }
                         ShulkBadge { visible: contentModel.modCount > 0; text: qsTr("%1 Mods").arg(contentModel.modCount) }
-                        Text {
-                            text: (root.profile && root.profile.playTime.length > 0 ? qsTr("%1 played").arg(root.profile.playTime) : qsTr("Not played yet"))
-                            font.pixelSize: Theme.sizeSmall
-                            color: Theme.textMuted
+                        Item {
+                            implicitWidth: playTimeText.implicitWidth
+                            implicitHeight: playTimeText.implicitHeight
+                            readonly property int off: Theme.getShadowOffset(playTimeText.font.pixelSize)
+
+                            Text {
+                                x: parent.off; y: parent.off
+                                text: playTimeText.text
+                                font: playTimeText.font
+                                color: Theme.getShadowColor(playTimeText.color)
+                            }
+                            Text {
+                                id: playTimeText
+                                x: 0; y: 0
+                                text: (root.profile && root.profile.playTime.length > 0 ? qsTr("%1 played").arg(root.profile.playTime) : qsTr("Not played yet"))
+                                font.pixelSize: Theme.sizeSmall
+                                color: Theme.textMuted
+                            }
                         }
                     }
                 }
@@ -300,14 +338,27 @@ FocusScope {
                     border.color: root.activeTab === index ? "#46567D" : "transparent"
                     border.width: 1.5
 
-                    Text {
-                        id: tabText
+                    Item {
                         anchors.centerIn: parent
-                        text: modelData
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.sizeBody
-                        font.bold: root.activeTab === index
-                        color: root.activeTab === index ? Theme.textPrimary : Theme.textSecondary
+                        implicitWidth: tabText.implicitWidth
+                        implicitHeight: tabText.implicitHeight
+                        readonly property int off: Theme.getShadowOffset(tabText.font.pixelSize)
+
+                        Text {
+                            x: parent.off; y: parent.off
+                            text: tabText.text
+                            font: tabText.font
+                            color: Theme.getShadowColor(tabText.color)
+                        }
+                        Text {
+                            id: tabText
+                            x: 0; y: 0
+                            text: modelData
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeBody
+                            font.bold: root.activeTab === index
+                            color: root.activeTab === index ? Theme.textPrimary : Theme.textSecondary
+                        }
                     }
 
                     MouseArea {

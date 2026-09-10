@@ -20,5 +20,19 @@
         <file alias="trails_tales_preview.png">panorama_trails_tales_preview.png</file>
         <file alias="tricky_trials_cube.png">panorama_tricky_trials_cube.png</file>
         <file alias="tricky_trials_preview.png">panorama_tricky_trials_preview.png</file>
+        <file alias="console_tu1_cube.png">panorama_console_tu1_cube.png</file>
+        <file alias="console_tu1_preview.png">panorama_console_tu1_preview.png</file>
+        <file alias="console_tu5_cube.png">panorama_console_tu5_cube.png</file>
+        <file alias="console_tu5_preview.png">panorama_console_tu5_preview.png</file>
+        <file alias="console_tu12_cube.png">panorama_console_tu12_cube.png</file>
+        <file alias="console_tu12_preview.png">panorama_console_tu12_preview.png</file>
+        <file alias="console_tu19_cube.png">panorama_console_tu19_cube.png</file>
+        <file alias="console_tu19_preview.png">panorama_console_tu19_preview.png</file>
+        <file alias="console_tu31_cube.png">panorama_console_tu31_cube.png</file>
+        <file alias="console_tu31_preview.png">panorama_console_tu31_preview.png</file>
+        <file alias="console_tu46_cube.png">panorama_console_tu46_cube.png</file>
+        <file alias="console_tu46_preview.png">panorama_console_tu46_preview.png</file>
+        <file alias="console_tu69_cube.png">panorama_console_tu69_cube.png</file>
+        <file alias="console_tu69_preview.png">panorama_console_tu69_preview.png</file>
     </qresource>
 </RCC>

@@ -9,8 +9,9 @@ FocusScope {
     id: root
 
     signal createProfileFromPack(string packName)
+    signal enterTopBarRequested()
 
-    property int activeSection: 0 // 0 = Platforms, 1 = Search, 2 = Content (Modpack Grid / Custom Builder)
+    property int activeSection: 1 // 0 = Search (Top), 1 = Platforms (Tabs), 2 = Content (Modpack Grid / Custom Builder)
     property int platformIndex: 0 // 0=Modrinth, 1=CurseForge, 2=FTB, 3=Technic, 4=ATLauncher, 5=Vanilla
     property int packIndex: 0
     property int customBuilderFocus: 0 // 0 = Name, 1 = Version Stepper, 2 = Loader Stepper, 3 = Create Button
@@ -151,14 +152,14 @@ FocusScope {
         var row = Math.floor(root.packIndex / root.gridCols)
         var cardHeight = 220 * Theme.scale
         var rowSpacing = Theme.space16
-        var cardTop = packGrid.y + row * (cardHeight + rowSpacing)
+        var cardTop = row * (cardHeight + rowSpacing)
         var cardBottom = cardTop + cardHeight
-        var visibleHeight = mainScroll.height - (90 * Theme.scale)
+        var visibleHeight = mainScroll.height - (40 * Theme.scale)
 
         if (cardBottom > mainScroll.contentY + visibleHeight) {
             mainScroll.contentY = cardBottom - visibleHeight + Theme.space16
-        } else if (cardTop < mainScroll.contentY + 40 * Theme.scale) {
-            mainScroll.contentY = Math.max(0, cardTop - 40 * Theme.scale)
+        } else if (cardTop < mainScroll.contentY) {
+            mainScroll.contentY = Math.max(0, cardTop - Theme.space16)
         }
     }
 
@@ -166,34 +167,14 @@ FocusScope {
         root.triggerLiveSearch()
     }
 
-    // Main Layout Flickable
-    Flickable {
-        id: mainScroll
+    // Top-Level Pinned ColumnLayout
+    ColumnLayout {
+        id: rootCol
         anchors.fill: parent
         visible: !root.inPackDetail
-        contentWidth: width
-        contentHeight: mainCol.implicitHeight + 40 * Theme.scale
-        clip: true
-        boundsBehavior: Flickable.DragOverBounds
+        spacing: Theme.space16
 
-        ScrollBar.vertical: ScrollBar {
-            policy: ScrollBar.AsNeeded
-            active: true
-        }
-
-        Behavior on contentY {
-            NumberAnimation {
-                duration: 180
-                easing.type: Easing.OutQuad
-            }
-        }
-
-        ColumnLayout {
-            id: mainCol
-            width: mainScroll.width
-            spacing: Theme.space16
-
-            Item { Layout.preferredHeight: Theme.space4 }
+        Item { Layout.preferredHeight: Theme.space4 }
 
             // =========================================================
             // TITLE & SEARCH HEADER
@@ -206,16 +187,51 @@ FocusScope {
 
                 ColumnLayout {
                     spacing: 2
-                    Text {
-                        text: qsTr("Discover")
-                        font.pixelSize: Theme.sizeTitle
-                        font.bold: true
-                        color: Theme.textPrimary
+                    Item {
+                        readonly property int shadowOff: Theme.getShadowOffset(Theme.sizeTitle)
+                        implicitWidth: discoverTitleText.implicitWidth
+                        implicitHeight: discoverTitleText.implicitHeight
+
+                        Text {
+                            x: parent.shadowOff
+                            y: parent.shadowOff
+                            text: qsTr("Discover")
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeTitle
+                            font.bold: true
+                            color: Theme.getShadowColor(discoverTitleText.color)
+                        }
+                        Text {
+                            id: discoverTitleText
+                            x: 0; y: 0
+                            text: qsTr("Discover")
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeTitle
+                            font.bold: true
+                            color: Theme.textPrimary
+                        }
                     }
-                    Text {
-                        text: qsTr("Browse modpacks across all platforms or create a custom profile")
-                        font.pixelSize: Theme.sizeCaption
-                        color: Theme.textSecondary
+                    Item {
+                        readonly property int shadowOff: Theme.getShadowOffset(Theme.sizeCaption)
+                        implicitWidth: discoverSubText.implicitWidth
+                        implicitHeight: discoverSubText.implicitHeight
+
+                        Text {
+                            x: parent.shadowOff
+                            y: parent.shadowOff
+                            text: qsTr("Browse modpacks across all platforms or create a custom profile")
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeCaption
+                            color: Theme.getShadowColor(discoverSubText.color)
+                        }
+                        Text {
+                            id: discoverSubText
+                            x: 0; y: 0
+                            text: qsTr("Browse modpacks across all platforms or create a custom profile")
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeCaption
+                            color: Theme.textSecondary
+                        }
                     }
                 }
 
@@ -226,7 +242,7 @@ FocusScope {
                     id: searchBox
                     Layout.preferredWidth: 380 * Theme.scale
                     Layout.preferredHeight: 46 * Theme.scale
-                    source: ((root.activeSection === 1) || searchInput.activeFocus) ? "qrc:/shulk/assets/mc/gui/text_field_highlighted.png" : "qrc:/shulk/assets/mc/gui/text_field.png"
+                    source: ((root.activeSection === 0) || searchInput.activeFocus) ? "qrc:/shulk/assets/mc/gui/text_field_highlighted.png" : "qrc:/shulk/assets/mc/gui/text_field.png"
                     border { left: 4; top: 4; right: 4; bottom: 4 }
                     horizontalTileMode: BorderImage.Stretch
                     verticalTileMode: BorderImage.Stretch
@@ -240,7 +256,7 @@ FocusScope {
                         border.color: Theme.mcDiamond
                         border.width: 2
                         radius: 2
-                        visible: root.activeSection === 1
+                        visible: root.activeSection === 0
                     }
 
                     RowLayout {
@@ -294,7 +310,7 @@ FocusScope {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            root.activeSection = 1
+                            root.activeSection = 0
                             searchInput.forceActiveFocus()
                         }
                     }
@@ -399,8 +415,8 @@ FocusScope {
                                 width: platRow.implicitWidth + Theme.space16
                                 radius: Theme.radiusSm
                                 color: root.platformIndex === index ? Theme.bgSurfaceFocused : (platMouse.containsMouse ? Theme.bgCardHover : Theme.bgCard)
-                                border.color: (root.activeSection === 0 && root.platformIndex === index) ? Theme.borderFocused : Theme.borderSubtle
-                                border.width: (root.activeSection === 0 && root.platformIndex === index) ? 2 : 1
+                                border.color: (root.activeSection === 1 && root.platformIndex === index) ? Theme.borderFocused : Theme.borderSubtle
+                                border.width: (root.activeSection === 1 && root.platformIndex === index) ? 2 : 1
                                 Behavior on border.color { ColorAnimation { duration: Theme.animFast } }
 
                                 Rectangle {
@@ -426,11 +442,26 @@ FocusScope {
                                         mipmap: true
                                     }
 
-                                    Text {
-                                        text: modelData.name
-                                        font.pixelSize: Theme.sizeBody
-                                        font.bold: true
-                                        color: root.platformIndex === index ? "#FFFFFF" : Theme.textPrimary
+                                    Item {
+                                        implicitWidth: tabNameText.implicitWidth
+                                        implicitHeight: tabNameText.implicitHeight
+                                        readonly property int tabOff: Theme.getShadowOffset(tabNameText.font.pixelSize)
+
+                                        Text {
+                                            x: parent.tabOff
+                                            y: parent.tabOff
+                                            text: tabNameText.text
+                                            font: tabNameText.font
+                                            color: Theme.getShadowColor(tabNameText.color)
+                                        }
+                                        Text {
+                                            id: tabNameText
+                                            x: 0; y: 0
+                                            text: modelData.name
+                                            font.pixelSize: Theme.sizeBody
+                                            font.bold: true
+                                            color: root.platformIndex === index ? "#FFFFFF" : Theme.textPrimary
+                                        }
                                     }
 
                                     Rectangle {
@@ -441,13 +472,27 @@ FocusScope {
                                         border.color: root.platformIndex === index ? Theme.mcEmerald : Theme.borderSubtle
                                         border.width: 1
 
-                                        Text {
-                                            id: platBadgeText
+                                        Item {
                                             anchors.centerIn: parent
-                                            text: modelData.badge
-                                            font.pixelSize: Theme.sizeSmall
-                                            font.bold: true
-                                            color: root.platformIndex === index ? Theme.mcEmerald : Theme.textSecondary
+                                            implicitWidth: platBadgeText.implicitWidth
+                                            implicitHeight: platBadgeText.implicitHeight
+                                            readonly property int badgeOff: Theme.getShadowOffset(platBadgeText.font.pixelSize)
+
+                                            Text {
+                                                x: parent.badgeOff
+                                                y: parent.badgeOff
+                                                text: platBadgeText.text
+                                                font: platBadgeText.font
+                                                color: Theme.getShadowColor(platBadgeText.color)
+                                            }
+                                            Text {
+                                                id: platBadgeText
+                                                x: 0; y: 0
+                                                text: modelData.badge
+                                                font.pixelSize: Theme.sizeSmall
+                                                font.bold: true
+                                                color: root.platformIndex === index ? Theme.mcEmerald : Theme.textSecondary
+                                            }
                                         }
                                     }
                                 }
@@ -458,7 +503,7 @@ FocusScope {
                                     hoverEnabled: true
                                     onClicked: {
                                         if (typeof shulkSound !== "undefined") shulkSound.playClick()
-                                        root.activeSection = 0
+                                        root.activeSection = 1
                                         root.platformIndex = index
                                     }
                                 }
@@ -506,44 +551,97 @@ FocusScope {
                 border.color: Theme.borderSubtle
                 border.width: 1
 
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: Theme.space12
-                    spacing: Theme.space12
+                Row {
+                    anchors.centerIn: parent
+                    spacing: Theme.space8
 
-                    Text {
-                        text: (platforms[root.platformIndex] ? platforms[root.platformIndex].name : "")
-                        font.pixelSize: Theme.sizeSubheading
-                        font.bold: true
-                        color: Theme.textPrimary
+                    Item {
+                        anchors.verticalCenter: parent.verticalCenter
+                        implicitWidth: platTitleText.implicitWidth
+                        implicitHeight: platTitleText.implicitHeight
+                        readonly property int titleOff: Theme.getShadowOffset(platTitleText.font.pixelSize)
+
+                        Text {
+                            x: parent.titleOff
+                            y: parent.titleOff
+                            text: platTitleText.text
+                            font: platTitleText.font
+                            color: Theme.getShadowColor(platTitleText.color)
+                        }
+                        Text {
+                            id: platTitleText
+                            x: 0; y: 0
+                            text: (platforms[root.platformIndex] ? platforms[root.platformIndex].name : "")
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeSubheading
+                            font.bold: true
+                            color: Theme.textPrimary
+                        }
                     }
 
-                    Text {
-                        text: "- " + (platforms[root.platformIndex] ? platforms[root.platformIndex].tagline : "")
-                        font.pixelSize: Theme.sizeCaption
-                        color: Theme.textSecondary
-                    }
+                    Item {
+                        anchors.verticalCenter: parent.verticalCenter
+                        implicitWidth: platTaglineText.implicitWidth
+                        implicitHeight: platTaglineText.implicitHeight
+                        readonly property int tagOff: Theme.getShadowOffset(platTaglineText.font.pixelSize)
 
-                    Item { Layout.fillWidth: true }
-
-                    Text {
-                        visible: root.platformIndex !== 5 && !shulkCreation.isSearching
-                        text: qsTr("%1 modpacks").arg(root.currentPacks ? root.currentPacks.length : 0)
-                        font.pixelSize: Theme.sizeSmall
-                        color: Theme.textGold
+                        Text {
+                            x: parent.tagOff
+                            y: parent.tagOff
+                            text: platTaglineText.text
+                            font: platTaglineText.font
+                            color: Theme.getShadowColor(platTaglineText.color)
+                        }
+                        Text {
+                            id: platTaglineText
+                            x: 0; y: 0
+                            text: "— " + (platforms[root.platformIndex] ? platforms[root.platformIndex].tagline : "")
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeCaption
+                            color: Theme.textSecondary
+                        }
                     }
                 }
             }
 
             // =========================================================
-            // MODPACK CARDS GRID (PLATFORMS 0 TO 4)
+            // SCROLLABLE CONTENT (CARDS GRID OR CUSTOM BUILDER)
             // =========================================================
-            ColumnLayout {
-                visible: root.platformIndex !== 5
+            Flickable {
+                id: mainScroll
                 Layout.fillWidth: true
-                Layout.leftMargin: Theme.space24
-                Layout.rightMargin: Theme.space24
-                spacing: Theme.space16
+                Layout.fillHeight: true
+                contentWidth: width
+                contentHeight: contentCol.implicitHeight + 40 * Theme.scale
+                clip: true
+                boundsBehavior: Flickable.DragOverBounds
+
+                ScrollBar.vertical: ScrollBar {
+                    policy: ScrollBar.AsNeeded
+                    active: true
+                }
+
+                Behavior on contentY {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutQuad
+                    }
+                }
+
+                ColumnLayout {
+                    id: contentCol
+                    width: mainScroll.width
+                    spacing: Theme.space16
+
+                    // =========================================================
+                    // MODPACK CARDS GRID (PLATFORMS 0 TO 4)
+                    // =========================================================
+                    ColumnLayout {
+                        visible: root.platformIndex !== 5
+                        Layout.fillWidth: true
+                        Layout.leftMargin: Theme.space24
+                        Layout.rightMargin: Theme.space24
+                        spacing: Theme.space16
 
                 // Live Database Searching Status
                 Rectangle {
@@ -576,19 +674,49 @@ FocusScope {
                             }
                         }
 
-                        Text {
+                        Item {
                             Layout.alignment: Qt.AlignHCenter
-                            text: shulkCreation.searchStatus
-                            font.pixelSize: Theme.sizeSubheading
-                            font.bold: true
-                            color: Theme.textPrimary
+                            implicitWidth: sStatusText.implicitWidth
+                            implicitHeight: sStatusText.implicitHeight
+                            readonly property int sOff: Theme.getShadowOffset(sStatusText.font.pixelSize)
+
+                            Text {
+                                x: parent.sOff
+                                y: parent.sOff
+                                text: sStatusText.text
+                                font: sStatusText.font
+                                color: Theme.getShadowColor(sStatusText.color)
+                            }
+                            Text {
+                                id: sStatusText
+                                x: 0; y: 0
+                                text: shulkCreation.searchStatus
+                                font.pixelSize: Theme.sizeSubheading
+                                font.bold: true
+                                color: Theme.textPrimary
+                            }
                         }
 
-                        Text {
+                        Item {
                             Layout.alignment: Qt.AlignHCenter
-                            text: qsTr("Searching live platform database...")
-                            font.pixelSize: Theme.sizeCaption
-                            color: Theme.textMuted
+                            implicitWidth: sSubText.implicitWidth
+                            implicitHeight: sSubText.implicitHeight
+                            readonly property int ssOff: Theme.getShadowOffset(sSubText.font.pixelSize)
+
+                            Text {
+                                x: parent.ssOff
+                                y: parent.ssOff
+                                text: sSubText.text
+                                font: sSubText.font
+                                color: Theme.getShadowColor(sSubText.color)
+                            }
+                            Text {
+                                id: sSubText
+                                x: 0; y: 0
+                                text: qsTr("Searching live platform database...")
+                                font.pixelSize: Theme.sizeCaption
+                                color: Theme.textMuted
+                            }
                         }
                     }
                 }
@@ -607,11 +735,26 @@ FocusScope {
                         anchors.centerIn: parent
                         spacing: Theme.space12
 
-                        Text {
+                        Item {
                             Layout.alignment: Qt.AlignHCenter
-                            text: qsTr("No modpacks found matching \"%1\"").arg(root.searchQuery)
-                            font.pixelSize: Theme.sizeSubheading
-                            color: Theme.textMuted
+                            implicitWidth: noPacksText.implicitWidth
+                            implicitHeight: noPacksText.implicitHeight
+                            readonly property int npOff: Theme.getShadowOffset(noPacksText.font.pixelSize)
+
+                            Text {
+                                x: parent.npOff
+                                y: parent.npOff
+                                text: noPacksText.text
+                                font: noPacksText.font
+                                color: Theme.getShadowColor(noPacksText.color)
+                            }
+                            Text {
+                                id: noPacksText
+                                x: 0; y: 0
+                                text: qsTr("No modpacks found matching \"%1\"").arg(root.searchQuery)
+                                font.pixelSize: Theme.sizeSubheading
+                                color: Theme.textMuted
+                            }
                         }
 
                         ShulkButton {
@@ -705,23 +848,57 @@ FocusScope {
                                         Layout.fillWidth: true
                                         spacing: 2
 
-                                        Text {
+                                        Item {
                                             Layout.fillWidth: true
-                                            text: modelData.name
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: Theme.sizeBody
-                                            font.bold: true
-                                            color: Theme.textPrimary
-                                            elide: Text.ElideRight
+                                            implicitHeight: cardPackNameText.implicitHeight + Theme.getShadowOffset(Theme.sizeBody)
+
+                                            Text {
+                                                x: Theme.getShadowOffset(Theme.sizeBody)
+                                                y: Theme.getShadowOffset(Theme.sizeBody)
+                                                width: cardPackNameText.width
+                                                height: cardPackNameText.height
+                                                text: cardPackNameText.text
+                                                font: cardPackNameText.font
+                                                color: Theme.getShadowColor(cardPackNameText.color)
+                                                elide: Text.ElideRight
+                                            }
+
+                                            Text {
+                                                id: cardPackNameText
+                                                anchors.fill: parent
+                                                text: modelData.name
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: Theme.sizeBody
+                                                font.bold: true
+                                                color: Theme.textPrimary
+                                                elide: Text.ElideRight
+                                            }
                                         }
 
-                                        Text {
+                                        Item {
                                             Layout.fillWidth: true
-                                            text: qsTr("By %1 | %2 downloads").arg(modelData.author).arg(modelData.downloads)
-                                            font.family: Theme.fontFamily
-                                            font.pixelSize: Theme.sizeSmall
-                                            color: Theme.textMuted
-                                            elide: Text.ElideRight
+                                            implicitHeight: cardPackMetaText.implicitHeight + Theme.getShadowOffset(Theme.sizeSmall)
+
+                                            Text {
+                                                x: Theme.getShadowOffset(Theme.sizeSmall)
+                                                y: Theme.getShadowOffset(Theme.sizeSmall)
+                                                width: cardPackMetaText.width
+                                                height: cardPackMetaText.height
+                                                text: cardPackMetaText.text
+                                                font: cardPackMetaText.font
+                                                color: Theme.getShadowColor(cardPackMetaText.color)
+                                                elide: Text.ElideRight
+                                            }
+
+                                            Text {
+                                                id: cardPackMetaText
+                                                anchors.fill: parent
+                                                text: qsTr("By %1 | %2 downloads").arg(modelData.author).arg(modelData.downloads)
+                                                font.family: Theme.fontFamily
+                                                font.pixelSize: Theme.sizeSmall
+                                                color: Theme.textMuted
+                                                elide: Text.ElideRight
+                                            }
                                         }
                                     }
                                 }
@@ -732,6 +909,19 @@ FocusScope {
                                     Layout.fillWidth: true
                                     Layout.fillHeight: true
                                     clip: true
+
+                                    Text {
+                                        x: Theme.getShadowOffset(Theme.sizeCaption)
+                                        y: Theme.getShadowOffset(Theme.sizeCaption)
+                                        width: descText.width
+                                        height: descText.height
+                                        text: descText.text
+                                        font: descText.font
+                                        color: Theme.getShadowColor(descText.color)
+                                        wrapMode: Text.WordWrap
+                                        elide: Text.ElideRight
+                                        maximumLineCount: descText.maximumLineCount
+                                    }
 
                                     Text {
                                         id: descText
@@ -848,11 +1038,26 @@ FocusScope {
                             fillMode: Image.PreserveAspectFit
                             smooth: false
                         }
-                        Text {
-                            text: qsTr("Configure Custom Minecraft Instance")
-                            font.pixelSize: Theme.sizeHeader
-                            font.bold: true
-                            color: Theme.textPrimary
+                        Item {
+                            implicitWidth: customHeadText.implicitWidth
+                            implicitHeight: customHeadText.implicitHeight
+                            readonly property int hOff: Theme.getShadowOffset(customHeadText.font.pixelSize)
+
+                            Text {
+                                x: parent.hOff
+                                y: parent.hOff
+                                text: customHeadText.text
+                                font: customHeadText.font
+                                color: Theme.getShadowColor(customHeadText.color)
+                            }
+                            Text {
+                                id: customHeadText
+                                x: 0; y: 0
+                                text: qsTr("Configure Custom Minecraft Instance")
+                                font.pixelSize: Theme.sizeHeader
+                                font.bold: true
+                                color: Theme.textPrimary
+                            }
                         }
                     }
 
@@ -861,12 +1066,26 @@ FocusScope {
                         Layout.fillWidth: true
                         spacing: Theme.space16
 
-                        Text {
-                            text: qsTr("Instance Name:");
-                            color: (root.activeSection === 2 && root.customBuilderFocus === 0) ? "#FFFFFF" : Theme.textSecondary;
-                            font.pixelSize: Theme.sizeBody;
-                            font.bold: (root.activeSection === 2 && root.customBuilderFocus === 0)
+                        Item {
                             Layout.preferredWidth: 160 * Theme.scale
+                            implicitHeight: nameLabelText.implicitHeight
+                            readonly property int nlOff: Theme.getShadowOffset(nameLabelText.font.pixelSize)
+
+                            Text {
+                                x: parent.nlOff
+                                y: parent.nlOff
+                                text: nameLabelText.text
+                                font: nameLabelText.font
+                                color: Theme.getShadowColor(nameLabelText.color)
+                            }
+                            Text {
+                                id: nameLabelText
+                                x: 0; y: 0
+                                text: qsTr("Instance Name:");
+                                color: (root.activeSection === 2 && root.customBuilderFocus === 0) ? "#FFFFFF" : Theme.textSecondary;
+                                font.pixelSize: Theme.sizeBody;
+                                font.bold: (root.activeSection === 2 && root.customBuilderFocus === 0)
+                            }
                         }
 
                         Rectangle {
@@ -905,12 +1124,26 @@ FocusScope {
                         Layout.fillWidth: true
                         spacing: Theme.space16
 
-                        Text {
-                            text: qsTr("Minecraft Version:");
-                            color: (root.activeSection === 2 && root.customBuilderFocus === 1) ? "#FFFFFF" : Theme.textSecondary;
-                            font.pixelSize: Theme.sizeBody;
-                            font.bold: (root.activeSection === 2 && root.customBuilderFocus === 1)
+                        Item {
                             Layout.preferredWidth: 160 * Theme.scale
+                            implicitHeight: verLabelText.implicitHeight
+                            readonly property int vlOff: Theme.getShadowOffset(verLabelText.font.pixelSize)
+
+                            Text {
+                                x: parent.vlOff
+                                y: parent.vlOff
+                                text: verLabelText.text
+                                font: verLabelText.font
+                                color: Theme.getShadowColor(verLabelText.color)
+                            }
+                            Text {
+                                id: verLabelText
+                                x: 0; y: 0
+                                text: qsTr("Minecraft Version:");
+                                color: (root.activeSection === 2 && root.customBuilderFocus === 1) ? "#FFFFFF" : Theme.textSecondary;
+                                font.pixelSize: Theme.sizeBody;
+                                font.bold: (root.activeSection === 2 && root.customBuilderFocus === 1)
+                            }
                         }
 
                         ShulkButton {
@@ -934,12 +1167,27 @@ FocusScope {
                             border.color: (root.activeSection === 2 && root.customBuilderFocus === 1) ? Theme.focusRing : "#0A0B0E"
                             border.width: (root.activeSection === 2 && root.customBuilderFocus === 1) ? 2 : 1
 
-                            Text {
+                            Item {
                                 anchors.centerIn: parent
-                                text: root.versions.length > root.selectedVersionIdx ? root.versions[root.selectedVersionIdx] : "26.2"
-                                font.pixelSize: Theme.sizeSubheading
-                                font.bold: true
-                                color: Theme.mcDiamond
+                                implicitWidth: verValText.implicitWidth
+                                implicitHeight: verValText.implicitHeight
+                                readonly property int vvOff: Theme.getShadowOffset(verValText.font.pixelSize)
+
+                                Text {
+                                    x: parent.vvOff
+                                    y: parent.vvOff
+                                    text: verValText.text
+                                    font: verValText.font
+                                    color: Theme.getShadowColor(verValText.color)
+                                }
+                                Text {
+                                    id: verValText
+                                    x: 0; y: 0
+                                    text: root.versions.length > root.selectedVersionIdx ? root.versions[root.selectedVersionIdx] : "26.2"
+                                    font.pixelSize: Theme.sizeSubheading
+                                    font.bold: true
+                                    color: Theme.mcDiamond
+                                }
                             }
 
                             MouseArea {
@@ -970,12 +1218,26 @@ FocusScope {
                         Layout.fillWidth: true
                         spacing: Theme.space16
 
-                        Text {
-                            text: qsTr("Mod Loader:");
-                            color: (root.activeSection === 2 && root.customBuilderFocus === 2) ? "#FFFFFF" : Theme.textSecondary;
-                            font.pixelSize: Theme.sizeBody;
-                            font.bold: (root.activeSection === 2 && root.customBuilderFocus === 2)
+                        Item {
                             Layout.preferredWidth: 160 * Theme.scale
+                            implicitHeight: ldrLabelText.implicitHeight
+                            readonly property int llOff: Theme.getShadowOffset(ldrLabelText.font.pixelSize)
+
+                            Text {
+                                x: parent.llOff
+                                y: parent.llOff
+                                text: ldrLabelText.text
+                                font: ldrLabelText.font
+                                color: Theme.getShadowColor(ldrLabelText.color)
+                            }
+                            Text {
+                                id: ldrLabelText
+                                x: 0; y: 0
+                                text: qsTr("Mod Loader:");
+                                color: (root.activeSection === 2 && root.customBuilderFocus === 2) ? "#FFFFFF" : Theme.textSecondary;
+                                font.pixelSize: Theme.sizeBody;
+                                font.bold: (root.activeSection === 2 && root.customBuilderFocus === 2)
+                            }
                         }
 
                         ShulkButton {
@@ -999,12 +1261,27 @@ FocusScope {
                             border.color: (root.activeSection === 2 && root.customBuilderFocus === 2) ? Theme.focusRing : "#0A0B0E"
                             border.width: (root.activeSection === 2 && root.customBuilderFocus === 2) ? 2 : 1
 
-                            Text {
+                            Item {
                                 anchors.centerIn: parent
-                                text: root.loaders[root.selectedLoaderIdx]
-                                font.pixelSize: Theme.sizeSubheading
-                                font.bold: true
-                                color: root.loaders[root.selectedLoaderIdx] === "Vanilla" ? "#FFFFFF" : Theme.mcEmerald
+                                implicitWidth: ldrValText.implicitWidth
+                                implicitHeight: ldrValText.implicitHeight
+                                readonly property int lvOff: Theme.getShadowOffset(ldrValText.font.pixelSize)
+
+                                Text {
+                                    x: parent.lvOff
+                                    y: parent.lvOff
+                                    text: ldrValText.text
+                                    font: ldrValText.font
+                                    color: Theme.getShadowColor(ldrValText.color)
+                                }
+                                Text {
+                                    id: ldrValText
+                                    x: 0; y: 0
+                                    text: root.loaders[root.selectedLoaderIdx]
+                                    font.pixelSize: Theme.sizeSubheading
+                                    font.bold: true
+                                    color: root.loaders[root.selectedLoaderIdx] === "Vanilla" ? "#FFFFFF" : Theme.mcEmerald
+                                }
                             }
 
                             MouseArea {
@@ -1057,6 +1334,7 @@ FocusScope {
             Item { Layout.preferredHeight: 90 * Theme.scale }
         }
     }
+}
 
     // =========================================================
     // GAMEPAD & CONTROLLER NAVIGATION ROUTER
@@ -1088,6 +1366,9 @@ FocusScope {
             } else if (root.activeSection === 1) {
                 root.activeSection = 0
                 if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+            } else if (root.activeSection === 0) {
+                root.enterTopBarRequested()
+                if (typeof shulkSound !== "undefined") shulkSound.playFocus()
             }
         } else if (action === 2) { // ActionNavigateDown
             if (root.activeSection === 0) {
@@ -1110,7 +1391,7 @@ FocusScope {
                 }
             }
         } else if (action === 3) { // ActionNavigateLeft
-            if (root.activeSection === 0) {
+            if (root.activeSection === 1) {
                 if (root.platformIndex > 0) {
                     root.platformIndex--
                     if (typeof shulkSound !== "undefined") shulkSound.playFocus()
@@ -1132,7 +1413,7 @@ FocusScope {
                 }
             }
         } else if (action === 4) { // ActionNavigateRight
-            if (root.activeSection === 0) {
+            if (root.activeSection === 1) {
                 if (root.platformIndex < root.platforms.length - 1) {
                     root.platformIndex++
                     if (typeof shulkSound !== "undefined") shulkSound.playFocus()
@@ -1154,9 +1435,12 @@ FocusScope {
                 }
             }
         } else if (action === 5) { // ActionAccept (A)
-            if (root.activeSection === 1) {
+            if (root.activeSection === 0) {
                 searchInput.forceActiveFocus()
                 if (typeof shulkSound !== "undefined") shulkSound.playClick()
+            } else if (root.activeSection === 1) {
+                root.activeSection = 2
+                if (typeof shulkSound !== "undefined") shulkSound.playFocus()
             } else if (root.activeSection === 2) {
                 if (root.platformIndex === 5) {
                     if (root.customBuilderFocus === 0) {
@@ -1175,11 +1459,16 @@ FocusScope {
                 }
             }
         } else if (action === 6) { // ActionBack (B)
-            if (root.activeSection === 1) {
-                searchInput.focus = false
-                root.activeSection = 0
+            if (root.activeSection === 0) {
+                if (searchInput.activeFocus) {
+                    searchInput.focus = false
+                } else {
+                    root.activeSection = 1
+                }
             } else if (root.activeSection === 2) {
-                root.activeSection = 0
+                root.activeSection = 1
+            } else if (root.activeSection === 1) {
+                root.enterTopBarRequested()
             }
             if (typeof shulkSound !== "undefined") shulkSound.playDismiss()
         } else if (action === 7) { // ActionPrimary (X)
@@ -1187,7 +1476,7 @@ FocusScope {
             root.platformIndex = (root.platformIndex + 1) % root.platforms.length
             if (typeof shulkSound !== "undefined") shulkSound.playFocus()
         } else if (action === 8 || action === 10) { // ActionSecondary / ActionSearch (Y)
-            root.activeSection = 1
+            root.activeSection = 0
             searchInput.forceActiveFocus()
             if (typeof shulkSound !== "undefined") shulkSound.playClick()
         } else if (action === 15) { // ActionTriggerLeft (LT / L2 / Q)

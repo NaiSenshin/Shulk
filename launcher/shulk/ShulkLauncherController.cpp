@@ -10,6 +10,8 @@
 #include "DesktopServices.h"
 #include "minecraft/MinecraftInstance.h"
 #include "minecraft/PackProfile.h"
+#include "minecraft/launch/MinecraftTarget.h"
+#include "ShulkRecentServerModel.h"
 #include "launch/LaunchTask.h"
 #include "launch/LogModel.h"
 #include "ui/dialogs/NewInstanceDialog.h"
@@ -133,40 +135,70 @@ void ShulkLauncherController::launch(const QString& instanceId)
                 if (logModel) {
                     auto conn = std::make_shared<QMetaObject::Connection>();
                     *conn = connect(logModel.get(), &QAbstractItemModel::rowsInserted, this,
-                        [this, logModel, conn](const QModelIndex&, int first, int last) {
+                        [this, logModel, conn, instanceId](const QModelIndex&, int first, int last) {
                             for (int i = first; i <= last; ++i) {
                                 QString line = logModel->data(logModel->index(i, 0), Qt::DisplayRole).toString();
 
-                                // Update progress text while loading
-                                if (line.contains("Loading mod", Qt::CaseInsensitive) ||
-                                    line.contains("Initializing mod", Qt::CaseInsensitive) ||
-                                    line.contains("Found mod", Qt::CaseInsensitive)) {
-                                    setStatus(StateRunning, tr("Loading mods & configs..."), 65);
-                                } else if (line.contains("Reloading ResourceManager", Qt::CaseInsensitive)) {
-                                    setStatus(StateRunning, tr("Loading resources & textures..."), 80);
-                                }
+                                 // Update progress text while loading
+                                 if (line.contains("Loading mod", Qt::CaseInsensitive) ||
+                                     line.contains("Initializing mod", Qt::CaseInsensitive) ||
+                                     line.contains("Found mod", Qt::CaseInsensitive)) {
+                                     setStatus(StateRunning, tr("Loading mods & configs..."), 65);
+                                 } else if (line.contains("Reloading ResourceManager", Qt::CaseInsensitive)) {
+                                     setStatus(StateRunning, tr("Loading resources & textures..."), 80);
+                                 }
 
-                                // Genuine window creation & rendering indicators:
-                                if (line.contains("OpenGL Renderer:", Qt::CaseInsensitive) ||
-                                    line.contains("OpenGL Version:", Qt::CaseInsensitive) ||
-                                    line.contains("OpenAL initialized", Qt::CaseInsensitive) ||
-                                    line.contains("Sound engine started", Qt::CaseInsensitive) ||
-                                    line.contains("Created: 1024x512", Qt::CaseInsensitive) ||
-                                    line.contains("atlas/gui", Qt::CaseInsensitive) ||
-                                    line.contains("LWJGL Version: 2", Qt::CaseInsensitive) ||
-                                    line.contains("Starting up SoundSystem", Qt::CaseInsensitive) ||
-                                    line.contains("Vulkan initialized", Qt::CaseInsensitive) ||
-                                    line.contains("VulkanMod] Device created", Qt::CaseInsensitive)) {
-                                    QObject::disconnect(*conn);
-                                    setStatus(StateRunning, tr("Opening game window..."), 100);
-                                    // Give window manager/compositor 600ms to map and render the window
-                                    QTimer::singleShot(600, this, [this]() {
-                                        notifyGameWindowOpened();
-                                    });
-                                    break;
-                                }
-                            }
-                        });
+                                 // Detect multiplayer server connection in real-time
+                                 if (m_recentServerModel) {
+                                     // Common Minecraft log formats:
+                                     // [Render thread/INFO]: Connecting to hypixel.net, 25565
+                                     // [Render thread/INFO]: Connecting to mc.example.com:25565
+                                     // Quick play to server: hypixel.net:25565
+                                     static const QRegularExpression s_connectRegex(
+                                         QStringLiteral("Connecting to\\s+([^,:\\s]+)(?:,\\s*|:)([0-9]+)"),
+                                         QRegularExpression::CaseInsensitiveOption);
+                                     static const QRegularExpression s_quickPlayRegex(
+                                         QStringLiteral("Quick play to server:\\s*([^:\\s]+)(?::([0-9]+))?"),
+                                         QRegularExpression::CaseInsensitiveOption);
+
+                                     auto match = s_connectRegex.match(line);
+                                     if (match.hasMatch()) {
+                                         QString host = match.captured(1).trimmed();
+                                         QString port = match.captured(2).trimmed();
+                                         QString target = port.isEmpty() || port == "25565" ? host : (host + ":" + port);
+                                         m_recentServerModel->recordServerPlayed(instanceId, target);
+                                     } else {
+                                         auto qpMatch = s_quickPlayRegex.match(line);
+                                         if (qpMatch.hasMatch()) {
+                                             QString host = qpMatch.captured(1).trimmed();
+                                             QString port = qpMatch.captured(2).trimmed();
+                                             QString target = port.isEmpty() || port == "25565" ? host : (host + ":" + port);
+                                             m_recentServerModel->recordServerPlayed(instanceId, target);
+                                         }
+                                     }
+                                 }
+
+                                 // Genuine window creation & rendering indicators:
+                                 if (line.contains("OpenGL Renderer:", Qt::CaseInsensitive) ||
+                                     line.contains("OpenGL Version:", Qt::CaseInsensitive) ||
+                                     line.contains("OpenAL initialized", Qt::CaseInsensitive) ||
+                                     line.contains("Sound engine started", Qt::CaseInsensitive) ||
+                                     line.contains("Created: 1024x512", Qt::CaseInsensitive) ||
+                                     line.contains("atlas/gui", Qt::CaseInsensitive) ||
+                                     line.contains("LWJGL Version: 2", Qt::CaseInsensitive) ||
+                                     line.contains("Starting up SoundSystem", Qt::CaseInsensitive) ||
+                                     line.contains("Vulkan initialized", Qt::CaseInsensitive) ||
+                                     line.contains("VulkanMod] Device created", Qt::CaseInsensitive)) {
+                                     QObject::disconnect(*conn);
+                                     setStatus(StateRunning, tr("Opening game window..."), 100);
+                                     // Give window manager/compositor 600ms to map and render the window
+                                     QTimer::singleShot(600, this, [this]() {
+                                         notifyGameWindowOpened();
+                                     });
+                                     break;
+                                 }
+                             }
+                         });
                 }
             }
 
@@ -199,6 +231,111 @@ void ShulkLauncherController::launch(const QString& instanceId)
         emit lastErrorChanged();
         emit launchFailed(instanceId, m_lastErrorMessage);
     }
+}
+
+void ShulkLauncherController::launchServer(const QString& instanceId, const QString& serverAddress)
+{
+     clearError();
+     if (!APPLICATION || !APPLICATION->instances()) {
+         m_lastErrorTitle = tr("System Error");
+         m_lastErrorMessage = tr("Launcher backend is not initialized.");
+         emit lastErrorChanged();
+         emit launchFailed(instanceId, m_lastErrorMessage);
+         return;
+     }
+
+     auto instance = APPLICATION->instances()->getInstanceById(instanceId);
+     if (!instance) {
+         m_lastErrorTitle = tr("Profile Not Found");
+         m_lastErrorMessage = tr("The selected profile \"%1\" could not be located on disk.").arg(instanceId);
+         emit lastErrorChanged();
+         emit launchFailed(instanceId, m_lastErrorMessage);
+         return;
+     }
+
+     // Immediately record this server jump so it stays at the top of history
+     if (m_recentServerModel) {
+         m_recentServerModel->recordServerPlayed(instanceId, serverAddress);
+     }
+
+     m_activeInstanceId = instanceId;
+     m_activeInstanceName = instance->name();
+     m_isLaunching = true;
+     emit activeInstanceIdChanged();
+     emit activeInstanceNameChanged();
+     emit isLaunchingChanged();
+
+     setStatus(StatePreparing, tr("Connecting to %1 via %2...").arg(serverAddress, instance->name()), 10);
+     emit launchStarted(instanceId);
+
+     // Wire running state tracking
+     instance->disconnect(this);
+     connect(instance, &BaseInstance::runningStatusChanged, this, [this, instanceId, serverAddress, instance](bool running) {
+         if (running) {
+             setStatus(StateRunning, tr("Joining %1...").arg(serverAddress), 50);
+             emit launchSucceeded(instanceId);
+
+             auto launchTask = instance->getLaunchTask();
+             if (launchTask) {
+                 auto logModel = launchTask->getLogModel();
+                 if (logModel) {
+                     auto conn = std::make_shared<QMetaObject::Connection>();
+                     *conn = connect(logModel.get(), &QAbstractItemModel::rowsInserted, this,
+                         [this, logModel, conn](const QModelIndex&, int first, int last) {
+                             for (int i = first; i <= last; ++i) {
+                                 QString line = logModel->data(logModel->index(i, 0), Qt::DisplayRole).toString();
+                                 if (line.contains("OpenGL Renderer:", Qt::CaseInsensitive) ||
+                                     line.contains("OpenGL Version:", Qt::CaseInsensitive) ||
+                                     line.contains("OpenAL initialized", Qt::CaseInsensitive) ||
+                                     line.contains("Sound engine started", Qt::CaseInsensitive) ||
+                                     line.contains("Created: 1024x512", Qt::CaseInsensitive) ||
+                                     line.contains("atlas/gui", Qt::CaseInsensitive) ||
+                                     line.contains("LWJGL Version: 2", Qt::CaseInsensitive) ||
+                                     line.contains("Starting up SoundSystem", Qt::CaseInsensitive) ||
+                                     line.contains("Vulkan initialized", Qt::CaseInsensitive) ||
+                                     line.contains("VulkanMod] Device created", Qt::CaseInsensitive)) {
+                                     QObject::disconnect(*conn);
+                                     setStatus(StateRunning, tr("Opening game window..."), 100);
+                                     QTimer::singleShot(600, this, [this]() {
+                                         notifyGameWindowOpened();
+                                     });
+                                     break;
+                                 }
+                             }
+                         });
+                 }
+             }
+
+             QTimer::singleShot(60000, this, [this]() {
+                 if (m_isLaunching && m_launchState == StateRunning) {
+                     notifyGameWindowOpened();
+                 }
+             });
+         } else {
+             m_isLaunching = false;
+             emit isLaunchingChanged();
+             setStatus(StateReady, tr("Ready"));
+             updateRunningState();
+             emit instanceTerminated(instanceId, 0);
+         }
+     });
+
+     setStatus(StateLaunching, tr("Connecting to %1...").arg(serverAddress), 30);
+
+     // Parse address into MinecraftTarget (supporting IPv6 brackets and custom ports)
+     auto target = std::make_shared<MinecraftTarget>(MinecraftTarget::parse(serverAddress, false));
+     bool result = APPLICATION->launch(instance, LaunchMode::Normal, target);
+     if (!result) {
+         m_isLaunching = false;
+         emit isLaunchingChanged();
+         setStatus(StateFailed, tr("Failed to connect to %1").arg(serverAddress));
+         m_lastErrorTitle = tr("Launch Failed");
+         m_lastErrorMessage = tr("Could not start Minecraft for \"%1\" to join server \"%2\".").arg(instance->name(), serverAddress);
+         m_lastErrorLog = tr("Instance ID: %1\nServer Address: %2\nTarget Path: %3")
+                              .arg(instanceId, serverAddress, instance->instanceRoot());
+         emit lastErrorChanged();
+         emit launchFailed(instanceId, m_lastErrorMessage);
+     }
 }
 
 void ShulkLauncherController::notifyGameWindowOpened()

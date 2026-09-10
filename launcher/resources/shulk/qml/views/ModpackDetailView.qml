@@ -192,20 +192,47 @@ FocusScope {
                     anchors.centerIn: parent
                     spacing: 6
 
-                    Text {
-                        text: qsTr("Source:")
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.sizeSmall
-                        color: Theme.textSecondary
+                    Item {
+                        implicitWidth: srcLabel.implicitWidth
+                        implicitHeight: srcLabel.implicitHeight
+                        readonly property int off: Theme.getShadowOffset(srcLabel.font.pixelSize)
+
+                        Text {
+                            x: parent.off; y: parent.off
+                            text: srcLabel.text
+                            font: srcLabel.font
+                            color: Theme.getShadowColor(srcLabel.color)
+                        }
+                        Text {
+                            id: srcLabel
+                            x: 0; y: 0
+                            text: qsTr("Source:")
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeSmall
+                            color: Theme.textSecondary
+                        }
                     }
 
-                    Text {
-                        id: platSourceText
-                        text: root.pack ? (root.pack.platform ? root.pack.platform.toUpperCase() : "MODPACK") : "MODPACK"
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.sizeSmall
-                        font.bold: true
-                        color: Theme.mcDiamond
+                    Item {
+                        implicitWidth: platSourceText.implicitWidth
+                        implicitHeight: platSourceText.implicitHeight
+                        readonly property int off: Theme.getShadowOffset(platSourceText.font.pixelSize)
+
+                        Text {
+                            x: parent.off; y: parent.off
+                            text: platSourceText.text
+                            font: platSourceText.font
+                            color: Theme.getShadowColor(platSourceText.color)
+                        }
+                        Text {
+                            id: platSourceText
+                            x: 0; y: 0
+                            text: root.pack ? (root.pack.platform ? root.pack.platform.toUpperCase() : "MODPACK") : "MODPACK"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeSmall
+                            font.bold: true
+                            color: Theme.mcDiamond
+                        }
                     }
                 }
             }
@@ -246,24 +273,54 @@ FocusScope {
                 Layout.fillWidth: true
                 spacing: Theme.space4
 
-                Text {
+                Item {
                     Layout.fillWidth: true
-                    text: root.effectiveName
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.sizeTitle
-                    font.bold: true
-                    color: Theme.textPrimary
-                    elide: Text.ElideRight
+                    implicitHeight: packTitleText.implicitHeight
+                    readonly property int off: Theme.getShadowOffset(packTitleText.font.pixelSize)
+
+                    Text {
+                        x: parent.off; y: parent.off
+                        width: parent.width
+                        text: packTitleText.text
+                        font: packTitleText.font
+                        color: Theme.getShadowColor(packTitleText.color)
+                        elide: Text.ElideRight
+                    }
+                    Text {
+                        id: packTitleText
+                        x: 0; y: 0
+                        width: parent.width
+                        text: root.effectiveName
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.sizeTitle
+                        font.bold: true
+                        color: Theme.textPrimary
+                        elide: Text.ElideRight
+                    }
                 }
 
                 RowLayout {
                     spacing: Theme.space8
 
-                    Text {
-                        text: root.pack ? qsTr("By %1").arg(root.pack.author) : ""
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.sizeBody
-                        color: Theme.textSecondary
+                    Item {
+                        implicitWidth: packAuthorText.implicitWidth
+                        implicitHeight: packAuthorText.implicitHeight
+                        readonly property int off: Theme.getShadowOffset(packAuthorText.font.pixelSize)
+
+                        Text {
+                            x: parent.off; y: parent.off
+                            text: packAuthorText.text
+                            font: packAuthorText.font
+                            color: Theme.getShadowColor(packAuthorText.color)
+                        }
+                        Text {
+                            id: packAuthorText
+                            x: 0; y: 0
+                            text: root.pack ? qsTr("By %1").arg(root.pack.author) : ""
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeBody
+                            color: Theme.textSecondary
+                        }
                     }
 
                     Text {
@@ -271,12 +328,26 @@ FocusScope {
                         color: Theme.textMuted
                     }
 
-                    Text {
-                        text: root.pack ? qsTr("%1 Downloads").arg(root.pack.downloads) : ""
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.sizeBody
-                        font.bold: true
-                        color: Theme.textGold
+                    Item {
+                        implicitWidth: packDlText.implicitWidth
+                        implicitHeight: packDlText.implicitHeight
+                        readonly property int off: Theme.getShadowOffset(packDlText.font.pixelSize)
+
+                        Text {
+                            x: parent.off; y: parent.off
+                            text: packDlText.text
+                            font: packDlText.font
+                            color: Theme.getShadowColor(packDlText.color)
+                        }
+                        Text {
+                            id: packDlText
+                            x: 0; y: 0
+                            text: root.pack ? qsTr("%1 Downloads").arg(root.pack.downloads) : ""
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeBody
+                            font.bold: true
+                            color: Theme.textGold
+                        }
                     }
 
                     ShulkBadge {
@@ -386,14 +457,27 @@ FocusScope {
                         border.color: (root.focusedArea === 1 && root.activeTab === modelData.idx) ? Theme.mcDiamond : (root.activeTab === modelData.idx ? "#46567D" : "transparent")
                         border.width: 1.5
 
-                        Text {
-                            id: tabText
+                        Item {
                             anchors.centerIn: parent
-                            text: modelData.name
-                            font.family: Theme.fontFamily
-                            font.pixelSize: Theme.sizeBody
-                            font.bold: root.activeTab === modelData.idx
-                            color: root.activeTab === modelData.idx ? "#FFFFFF" : Theme.textSecondary
+                            implicitWidth: tabText.implicitWidth
+                            implicitHeight: tabText.implicitHeight
+                            readonly property int off: Theme.getShadowOffset(tabText.font.pixelSize)
+
+                            Text {
+                                x: parent.off; y: parent.off
+                                text: tabText.text
+                                font: tabText.font
+                                color: Theme.getShadowColor(tabText.color)
+                            }
+                            Text {
+                                id: tabText
+                                x: 0; y: 0
+                                text: modelData.name
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.sizeBody
+                                font.bold: root.activeTab === modelData.idx
+                                color: root.activeTab === modelData.idx ? "#FFFFFF" : Theme.textSecondary
+                            }
                         }
 
                         MouseArea {

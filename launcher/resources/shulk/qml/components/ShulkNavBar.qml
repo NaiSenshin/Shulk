@@ -95,8 +95,8 @@ Rectangle {
             Item {
                 Layout.alignment: Qt.AlignVCenter
                 readonly property int brandOffset: Theme.getShadowOffset(24 * Theme.scale)
-                implicitWidth: brandText.implicitWidth + brandOffset
-                implicitHeight: brandText.implicitHeight + brandOffset
+                implicitWidth: brandText.implicitWidth
+                implicitHeight: brandText.implicitHeight
 
                 Text {
                     x: parent.brandOffset
@@ -111,6 +111,8 @@ Rectangle {
 
                 Text {
                     id: brandText
+                    x: 0
+                    y: 0
                     text: qsTr("SHULK")
                     font.family: Theme.fontDisplay
                     font.pixelSize: 24 * Theme.scale
@@ -178,14 +180,13 @@ Rectangle {
 
                         Item {
                             readonly property int tabOffset: Theme.getShadowOffset(navTabText.font.pixelSize)
-                            readonly property int baselineAdj: Math.max(1, Math.round(navTabText.font.pixelSize * 0.12))
-                            implicitWidth: navTabText.implicitWidth
-                            implicitHeight: navTabText.implicitHeight
+                            width: navTabText.implicitWidth
+                            height: navTabText.implicitHeight
                             anchors.verticalCenter: parent.verticalCenter
 
                             Text {
                                 x: parent.tabOffset
-                                y: parent.tabOffset + parent.baselineAdj
+                                y: parent.tabOffset
                                 text: modelData.name
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.sizeBody
@@ -195,7 +196,8 @@ Rectangle {
 
                             Text {
                                 id: navTabText
-                                y: parent.baselineAdj
+                                x: 0
+                                y: 0
                                 text: modelData.name
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.sizeBody
@@ -296,8 +298,8 @@ Rectangle {
 
                     Item {
                         readonly property int accOffset: Theme.getShadowOffset(accountNameText.font.pixelSize)
-                        implicitWidth: accountNameText.implicitWidth + accOffset
-                        implicitHeight: accountNameText.implicitHeight + accOffset
+                        implicitWidth: accountNameText.implicitWidth
+                        implicitHeight: accountNameText.implicitHeight
 
                         Text {
                             x: parent.accOffset
@@ -311,6 +313,8 @@ Rectangle {
 
                         Text {
                             id: accountNameText
+                            x: 0
+                            y: 0
                             text: shulkAccounts.hasActiveAccount ? shulkAccounts.activeAccountName : qsTr("Sign in")
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.sizeCaption
@@ -326,11 +330,34 @@ Rectangle {
                     }
                 }
 
-                Text {
-                    text: ">"
-                    font.pixelSize: Theme.sizeHeader
-                    color: Theme.textMuted
+                Item {
+                    readonly property int chevOffset: Theme.getShadowOffset(Theme.sizeCaption)
+                    readonly property int opticalY: -Math.round(Theme.sizeCaption * 0.08)
+                    implicitWidth: chevText.implicitWidth
+                    implicitHeight: chevText.implicitHeight
                     anchors.verticalCenter: parent.verticalCenter
+                    anchors.verticalCenterOffset: opticalY
+
+                    Text {
+                        x: parent.chevOffset
+                        y: parent.chevOffset
+                        text: ">"
+                        font.family: Theme.fontDisplay
+                        font.pixelSize: Theme.sizeCaption
+                        font.bold: true
+                        color: Theme.getShadowColor(chevText.color)
+                    }
+
+                    Text {
+                        id: chevText
+                        x: 0
+                        y: 0
+                        text: ">"
+                        font.family: Theme.fontDisplay
+                        font.pixelSize: Theme.sizeCaption
+                        font.bold: true
+                        color: Theme.textMuted
+                    }
                 }
             }
 
@@ -359,28 +386,32 @@ Rectangle {
             }
 
             Item {
-                readonly property int exitOffset: Theme.getShadowOffset(18 * Theme.scale)
-                readonly property int baselineAdj: Math.max(1, Math.round(18 * Theme.scale * 0.12))
+                readonly property int exitOffset: Theme.getShadowOffset(16 * Theme.scale)
+                readonly property int opticalY: Math.round(16 * Theme.scale * 0.10)
+                readonly property int opticalX: 0
                 anchors.centerIn: parent
-                implicitWidth: exitLabel.implicitWidth
-                implicitHeight: exitLabel.implicitHeight
+                anchors.horizontalCenterOffset: opticalX
+                anchors.verticalCenterOffset: opticalY
+                width: exitLabel.implicitWidth
+                height: exitLabel.implicitHeight
 
                 Text {
                     x: parent.exitOffset
-                    y: parent.exitOffset + parent.baselineAdj
-                    text: "✕"
+                    y: parent.exitOffset
+                    text: "X"
                     font.family: Theme.fontDisplay
-                    font.pixelSize: 18 * Theme.scale
+                    font.pixelSize: 16 * Theme.scale
                     font.bold: true
                     color: Theme.getShadowColor(exitLabel.color)
                 }
 
                 Text {
                     id: exitLabel
-                    y: parent.baselineAdj
-                    text: "✕"
+                    x: 0
+                    y: 0
+                    text: "X"
                     font.family: Theme.fontDisplay
-                    font.pixelSize: 18 * Theme.scale
+                    font.pixelSize: 16 * Theme.scale
                     font.bold: true
                     color: (root.isFocused && root.focusIndex === 1) || exitMouse.containsMouse ? "#FFFFFF" : "#FF6666"
                 }

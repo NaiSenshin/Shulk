@@ -19,14 +19,13 @@ Rectangle {
 
     Item {
         readonly property int badgeOffset: Theme.getShadowOffset(badgeText.font.pixelSize)
-        readonly property int baselineAdj: Math.max(1, Math.round(badgeText.font.pixelSize * 0.12))
         anchors.centerIn: parent
-        implicitWidth: badgeText.implicitWidth
-        implicitHeight: badgeText.implicitHeight
+        width: badgeText.implicitWidth
+        height: badgeText.implicitHeight
 
         Text {
             x: parent.badgeOffset
-            y: parent.badgeOffset + parent.baselineAdj
+            y: parent.badgeOffset
             text: root.text
             font.pixelSize: Theme.sizeSmall
             font.family: Theme.fontFamily
@@ -36,7 +35,8 @@ Rectangle {
 
         Text {
             id: badgeText
-            y: parent.baselineAdj
+            x: 0
+            y: 0
             text: root.text
             font.pixelSize: Theme.sizeSmall
             font.family: Theme.fontFamily
