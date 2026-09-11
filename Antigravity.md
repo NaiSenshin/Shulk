@@ -926,8 +926,10 @@ Shulk is a native, handheld-first Minecraft Java Edition launcher built with Qt 
 
 ### 2026-09-10 - Updated Primary Git Readme Screenshot
 - **User Request**: "update the first image on the git to this"
-- Updated `screenshots/home.png` in the repository with the provided image showing the refreshed v1.1.0 home screen layout (top-right exit button, Favorite Servers / Jump Back In shelf).
+- Updated `screenshots/home.png` and created `screenshots/home_v110.png` in the repository with the provided image showing the refreshed v1.1.0 home screen layout (top-right exit button, Favorite Servers / Jump Back In shelf).
+- Pointed `README.md` to `screenshots/home_v110.png` to bypass GitHub's Camo CDN proxy cache.
 - Committed and pushed to `main` and `dev` on both `origin` (`NaiSenshin/Shulk`) and `dev` (`NaiSenshin/Shulk-Dev`).
+
 
 
 
