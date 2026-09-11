@@ -16,6 +16,10 @@ Shulk is a native, handheld-first Minecraft Java Edition launcher built with Qt 
 * **Strict GitHub Push Policy**: NEVER push commits, tags, or releases to GitHub unless the user specifically and explicitly requests it. Keep all local changes, builds, and tests local.
 
 ## Current State
+* **Official v1.1.0 & Dev Channel 1.1.0-dev4 Live on GitHub (2026-09-10)**:
+  - Live Main Release: `https://github.com/NaiSenshin/Shulk/releases/tag/v1.1.0` (Assets: Windows x64 zip, SteamOS/Bazzite installer, generic Linux tar.gz).
+  - Dev Channel Release: `1.1.0-dev4` on `NaiSenshin/Shulk-Dev` with updated installer and Windows zip.
+  - Updater engine fixed in `ShulkLauncherController.cpp` (`parseVersionString` & `isRemoteVersionNewer`) to enforce that official releases strictly supersede dev pre-releases (`1.1.0` > `1.1.0-dev*`).
 * **Shulk Launcher v1.1.0 Features Implemented (2026-09-09)**:
   - Bumped version to `1.1.0` in `CMakeLists.txt`.
   - Implemented authentic Minecraft diagonal down-to-right (`+X, +Y`) drop shadow styling across all launcher text elements:
@@ -872,6 +876,7 @@ Shulk is a native, handheld-first Minecraft Java Edition launcher built with Qt 
     - 680x520 Deepslate dialog with custom emerald scroll indicator.
     - Full D-pad Up/Down smooth scrolling and LB/RB bumper paging.
     - Complete attribution cards for Shulk (GPL-3.0-only), Prism Launcher / PolyMC / MultiMC upstream foundation, third-party libraries (Qt 6, SDL2, QuaZip, tomlplusplus, cmark, gamemode, libnbt++), and Mojang / Microsoft disclaimers.
+
 ### 2026-09-10 - Official Public Release v1.1.0 on Live Main GitHub
 - **User Request**: "can you upload 1.1.0 to the live main github? windows, bazzite, etc etc. be sure to make a backup bprior"
 - **Backups Created Prior to Release**:
@@ -889,11 +894,41 @@ Shulk is a native, handheld-first Minecraft Java Edition launcher built with Qt 
   * **Generic Linux x86_64 Standalone**: Packaged `Shulk-1.1.0-Linux-x86_64.tar.gz` (178 MB) with standalone launcher binary and resource shares.
 - **Published GitHub Release**:
   * Created public GitHub Release **v1.1.0** ("Shulk v1.1.0", Release ID 386649336) on live main repository `NaiSenshin/Shulk` with human-written, non-marketing patch notes matching the style of v1.0.0.
-  * Uploaded all 3 release packages matching auto-updater detection patterns:
-    1. `Shulk-1.1.0-Windows-x64.zip` (Asset ID: 555899234)
-    2. `Shulk-1.1.0-SteamOS-Bazzite-Installer.tar.gz` (Asset ID: 555899484)
-    3. `Shulk-1.1.0-Linux-x86_64.tar.gz` (Asset ID: 555900031)
   * Live URL: https://github.com/NaiSenshin/Shulk/releases/tag/v1.1.0
+
+### 2026-09-10 - Updater Precedence Fix (Official Releases > Dev Builds) & 1.1.0-dev4 Dev Channel Hotfix
+- **Problem**:
+  * User reported: "non-dev releases need to be recognized as newer than dev, for example, right now my 1.1.0dev is being recognized as up-to-date even though i just fully released 1.1.0 actual release".
+  * Diagnosis: In `ShulkLauncherController.cpp`, `cleanCurrentVer = currentVerStr.split('-').first().trimmed()` stripped `-dev` before comparing base versions. When comparing current `1.1.0-dev3` against remote `1.1.0`, both became `1.1.0`, evaluating `1.1.0 > 1.1.0` as `false`.
+- **Solution**:
+  * Implemented `parseVersionString()` and SemVer compliant `isRemoteVersionNewer()` in `ShulkLauncherController.cpp`:
+    - Parses base dotted versions into numeric components.
+    - Accurately detects `-dev`, `-develop`, `d2`, etc.
+    - Strict SemVer rule: An official final release `X.Y.Z` is strictly newer than any pre-release/dev `X.Y.Z-devN`.
+    - If both are dev builds: compares dev build counter (`r.devNumber > c.devNumber`).
+    - Synchronized code across both main and source trees. Committed and pushed to `main` on `NaiSenshin/Shulk` and `NaiSenshin/Shulk-Dev` (`commit fd35444d`), updating tag `v1.1.0`.
+- **Rebuilt Packages & Replaced Release Assets**:
+  * Cross-compiled Windows MinGW binary `prismlauncher.exe` with the updater fix via Docker builder and packaged `Shulk-1.1.0-Windows-x64.zip` (206 MB).
+  * Rebuilt Linux launcher with updater fix and packaged `Shulk-1.1.0-SteamOS-Bazzite-Installer.tar.gz` (460 MB) and `Shulk-1.1.0-Linux-x86_64.tar.gz` (186 MB).
+  * Cleared stale assets and uploaded fixed packages to GitHub Release `v1.1.0` (ID 386649336):
+    - `Shulk-1.1.0-SteamOS-Bazzite-Installer.tar.gz` (Asset ID 555970457)
+    - `Shulk-1.1.0-Linux-x86_64.tar.gz` (Asset ID 555970856)
+    - `Shulk-1.1.0-Windows-x64.zip` (Asset ID 555971014)
+  * Created release **1.1.0-dev4** (Release ID 386673923) on private `NaiSenshin/Shulk-Dev` with updated installer and Windows assets so existing devices running `1.1.0-dev3` on the dev channel can update directly in-app to acquire the new updater logic.
+
+### 2026-09-10 - Updated Host Laptop Shulk Installation to v1.1.0
+- **User Request**: "update my shulk on my laptop to the latest release"
+- Backed up `accounts.json` and `prismlauncher.cfg` in `~/.local/share/shulk/`.
+- Deployed latest v1.1.0 standalone installer bundle to `~/.local/share/shulk/`.
+- Verified binary upgraded to v1.1.0 (`PrismLauncher 1.1.0-develop`, commit `33996a28f`, `version.txt` = `1.1.0`).
+- Verified all user accounts (`accounts.json`, 11 KB), instances, and preferences were preserved.
+- Verified desktop integration (`~/.local/bin/shulk` symlink, `.desktop` file, icon cache).
+
+### 2026-09-10 - Updated Primary Git Readme Screenshot
+- **User Request**: "update the first image on the git to this"
+- Updated `screenshots/home.png` in the repository with the provided image showing the refreshed v1.1.0 home screen layout (top-right exit button, Favorite Servers / Jump Back In shelf).
+- Committed and pushed to `main` and `dev` on both `origin` (`NaiSenshin/Shulk`) and `dev` (`NaiSenshin/Shulk-Dev`).
+
 
 
 
