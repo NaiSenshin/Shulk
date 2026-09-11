@@ -3,7 +3,7 @@
 A controller-first Minecraft launcher for handheld PCs like the Steam Deck, ROG Ally, and Legion Go.
 
 <p align="center">
-  <img src="screenshots/home.png" alt="Shulk Home Screen" width="100%" />
+  <img src="screenshots/home_v110.png" alt="Shulk Home Screen" width="100%" />
 </p>
 
 ## Why I made this
