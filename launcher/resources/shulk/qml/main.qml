@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Qt5Compat.GraphicalEffects
+import QtQuick.Effects
 import org.shulk.launcher
 import "theme"
 import "components"
@@ -206,8 +206,10 @@ ApplicationWindow {
             }
 
             layer.enabled: (shulkTheme.panoramaBlurRadius > 0)
-            layer.effect: FastBlur {
-                radius: shulkTheme.panoramaBlurRadius
+            layer.effect: MultiEffect {
+                blurEnabled: (shulkTheme.panoramaBlurRadius > 0)
+                blurMax: 40
+                blur: Math.min(1.0, shulkTheme.panoramaBlurRadius / 40.0)
             }
         }
 

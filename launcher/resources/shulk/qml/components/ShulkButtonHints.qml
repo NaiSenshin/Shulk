@@ -148,7 +148,7 @@ Rectangle {
                 x: 0; y: 0
                 text: typeof shulkLauncher !== "undefined" && shulkLauncher.statusMessage !== ""
                       ? shulkLauncher.statusMessage
-                      : qsTr("Minecraft: Java Edition | Shulk %1").arg(typeof shulkLauncher !== "undefined" ? shulkLauncher.appVersion : "1.1.0")
+                      : qsTr("Minecraft: Java Edition | Shulk %1").arg(typeof shulkLauncher !== "undefined" ? shulkLauncher.appVersion : "1.1.1")
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.sizeSmall
                 color: Theme.textMuted

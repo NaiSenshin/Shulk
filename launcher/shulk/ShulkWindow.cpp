@@ -25,6 +25,7 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QIcon>
+#include <QMessageBox>
 
 #include <QFontDatabase>
 #include "ShulkPanoramaItem.h"
@@ -81,6 +82,9 @@ bool ShulkWindow::initialize()
 
     m_engine->addImageProvider(QLatin1String("insticons"), new ShulkIconProvider());
     m_engine->addImageProvider(QLatin1String("shulkserver"), new ShulkServerIconProvider(m_recentServerModel.get()));
+    QString appDir = QCoreApplication::applicationDirPath();
+    m_engine->addImportPath(appDir + "/qml");
+
     QString devQmlPath = qEnvironmentVariable("SHULK_DEV_QML");
     if (devQmlPath.isEmpty()) {
         QString localDev = QDir::current().filePath("launcher/resources/shulk/qml");
@@ -94,14 +98,15 @@ bool ShulkWindow::initialize()
         m_engine->addImportPath(devQmlPath);
         m_engine->load(QUrl::fromLocalFile(devQmlPath + "/main.qml"));
     } else {
-        QString appDir = QCoreApplication::applicationDirPath();
-        m_engine->addImportPath(appDir + "/qml");
         m_engine->addImportPath("qrc:/shulk/qml");
         m_engine->load(QUrl(QStringLiteral("qrc:/shulk/qml/main.qml")));
     }
 
     if (m_engine->rootObjects().isEmpty()) {
         qCritical() << "Failed to load Shulk QML main interface!";
+        QMessageBox::critical(nullptr, "Shulk Startup Error",
+            "Failed to load Shulk user interface.\n\n"
+            "Please check that all runtime dependencies and QML modules are properly installed.");
         return false;
     }
 
