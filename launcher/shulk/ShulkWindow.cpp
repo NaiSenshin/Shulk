@@ -93,6 +93,14 @@ bool ShulkWindow::initialize()
         }
     }
 
+    QString qmlErrors;
+    connect(m_engine.get(), &QQmlApplicationEngine::warnings, this, [&qmlErrors](const QList<QQmlError>& warnings) {
+        for (const auto& err : warnings) {
+            qCritical() << "Shulk QML Error:" << err.toString();
+            qmlErrors += err.toString() + "\n";
+        }
+    });
+
     if (!devQmlPath.isEmpty() && QFile::exists(devQmlPath + "/main.qml")) {
         qDebug() << "Shulk: DEV MODE active! Loading QML directly from disk:" << devQmlPath;
         m_engine->addImportPath(devQmlPath);
@@ -103,10 +111,13 @@ bool ShulkWindow::initialize()
     }
 
     if (m_engine->rootObjects().isEmpty()) {
-        qCritical() << "Failed to load Shulk QML main interface!";
-        QMessageBox::critical(nullptr, "Shulk Startup Error",
-            "Failed to load Shulk user interface.\n\n"
-            "Please check that all runtime dependencies and QML modules are properly installed.");
+        qCritical() << "Failed to load Shulk QML main interface! Errors:" << qmlErrors;
+        QString errorMsg = "Failed to load Shulk user interface.\n\n";
+        if (!qmlErrors.trimmed().isEmpty()) {
+            errorMsg += "Error details:\n" + qmlErrors.trimmed() + "\n\n";
+        }
+        errorMsg += "Please check that all runtime dependencies and QML modules are properly installed.";
+        QMessageBox::critical(nullptr, "Shulk Startup Error", errorMsg);
         return false;
     }
 
