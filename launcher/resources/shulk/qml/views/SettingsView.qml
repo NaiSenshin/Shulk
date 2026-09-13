@@ -161,7 +161,7 @@ FocusScope {
             id: "about",
             name: qsTr("About Shulk"),
             iconSource: "qrc:/shulk/icons/shulk.png",
-            badge: "v1.1.0",
+            badge: "v1.1.1",
             tagline: qsTr("Application version, dual-channel updates, credits, and system info"),
             disabled: false
         }

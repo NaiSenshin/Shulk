@@ -1622,8 +1622,8 @@ ShulkWindow* Application::showShulkWindow()
     if (!m_shulkWindow) {
         m_shulkWindow = std::make_unique<ShulkWindow>();
         if (!m_shulkWindow->initialize()) {
-            qWarning() << "Could not initialize Shulk QML Window, falling back to MainWindow";
-            showMainWindow(false);
+            qWarning() << "Could not initialize Shulk QML Window";
+            m_shulkWindow.reset();
             return nullptr;
         }
         connect(m_shulkWindow.get(), &ShulkWindow::windowClosed, this, [this]() {
