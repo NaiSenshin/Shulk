@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shulk: Handheld Minecraft Java Launcher</title>
+    <meta name="description" content="A native, handheld-first Minecraft Java Edition launcher built for Steam Deck, ROG Ally, Legion Go, SteamOS, Bazzite, and controller-driven PCs.">
+    <link rel="icon" type="image/png" href="assets/icons/shulk.png">
+    
+    <!-- Preload core fonts -->
+    <link rel="preload" href="assets/fonts/Mojangles.otf" as="font" type="font/otf" crossorigin>
+    <link rel="preload" href="assets/fonts/Minecraft.ttf" as="font" type="font/ttf" crossorigin>
+    
+    <link rel="stylesheet" href="style.css?v=7">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="container nav-wrapper">
+            <a href="#" class="logo-link">
+                <img src="assets/icons/shulk.png" alt="Shulk Icon" class="logo-img">
+                <div class="logo-text-wrap">
+                    <span class="logo-title mc-shadow">SHULK <span class="version-pill js-version-tag">v1.1.2</span></span>
+                </div>
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="#features" class="nav-link font-pixel">Features</a></li>
+                <li><a href="#downloads" class="nav-link font-pixel">Downloads</a></li>
+                <li><a href="#guide" class="nav-link font-pixel">Install Guide</a></li>
+                <li><a href="https://github.com/NaiSenshin/Shulk" target="_blank" rel="noopener" class="nav-link font-pixel">GitHub ↗</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button id="sound-toggle" class="sound-toggle-btn font-pixel" aria-label="Toggle Sound Effects">🔊 SFX: ON</button>
+                <a href="#downloads" class="btn btn-emerald btn-sm font-pixel">
+                    <span>Get Shulk</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-badge-wrap">
+                    <span class="handheld-pill font-pixel">
+                        <img src="assets/icons/grass_block.png" alt="">
+                        Handheld First Minecraft Launcher
+                    </span>
+                </div>
+
+                <h1 class="hero-title mc-shadow">The Minecraft Java Launcher Built for Handhelds.</h1>
+                <p class="hero-subtitle">
+                    Designed specifically for Steam Deck, ROG Ally, Legion Go, SteamOS, Bazzite, and controller driven PCs. 
+                    100% gamepad navigation, 3D title panoramas, instant modpack discovery, and seamless single action launching.
+                </p>
+
+                <!-- Smart OS Download Box -->
+                <div class="hero-download-box">
+                    <div class="download-os-info font-pixel">
+                        <span>Platform:</span>
+                        <span id="hero-detected-os" class="os-detected-tag">Detecting OS...</span>
+                    </div>
+
+                    <a id="hero-download-btn" href="#downloads" class="btn btn-emerald btn-hero js-download-trigger">
+                        <img src="assets/icons/grass_block.png" class="btn-icon" alt="">
+                        <span id="hero-btn-text">Download for Handheld</span>
+                    </a>
+
+                    <div class="download-meta-info">
+                        <span id="hero-asset-size">v1.1.2 • Latest Release</span>
+                        <span>•</span>
+                        <span>Updated <span class="js-release-date">Sep 10, 2026</span></span>
+                        <span>•</span>
+                        <span>GPLv3 Open Source</span>
+                    </div>
+
+                    <a href="#downloads" class="download-other-link font-pixel">Looking for another platform? View all downloads ▾</a>
+                </div>
+
+                <!-- Hero Preview Frame -->
+                <div class="hero-preview">
+                    <div class="hero-screenshot-frame">
+                        <img src="assets/images/home_v110.png" alt="Shulk Launcher 1.1.2 Home Dashboard" class="hero-screenshot-img">
+                        <span class="preview-tag font-pixel">Shulk v1.1.2 Home Dashboard • SteamOS / Handheld Mode</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section id="features" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag font-pixel">Core Highlights</span>
+                    <h2 class="section-title mc-shadow">Engineered for Consoles & Handhelds</h2>
+                    <p class="section-desc">Say goodbye to clunky desktop window launchers and cursor emulation.</p>
+                </div>
+
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon-box">
+                            <img src="assets/icons/compass.png" alt="">
+                        </div>
+                        <h3 class="feature-title mc-shadow-gold">100% Gamepad Navigation</h3>
+                        <p class="feature-desc">
+                            Complete 60Hz Dpad and analog stick spatial navigation across every menu, setting, and dialog. 
+                            Native glyph hints, bumper tab switching (LT and RT), and virtual keyboard integration.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon-box">
+                            <img src="assets/icons/repeater.png" alt="">
+                        </div>
+                        <h3 class="feature-title mc-shadow-emerald">Jump Back In Shelf</h3>
+                        <p class="feature-desc">
+                            Recent multiplayer server shelf right on your home screen. Single action connect with live latency ping, 
+                            player counts, and server banners without digging through nested menus.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon-box">
+                            <img src="assets/icons/bookshelf.png" alt="">
+                        </div>
+                        <h3 class="feature-title mc-shadow-diamond">Multi Platform Modpack Store</h3>
+                        <p class="feature-desc">
+                            Search and install modpacks directly from Modrinth, CurseForge, FTB, Technic, and ATLauncher. 
+                            Browse dependencies, screenshots, and descriptions with gamepad support.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon-box">
+                            <img src="assets/icons/steve_head.png" alt="">
+                        </div>
+                        <h3 class="feature-title mc-shadow">3D Skin & Panorama Engine</h3>
+                        <p class="feature-desc">
+                            Real time GPU 3D rotating cubemap panoramas from 10 Minecraft eras and classic Console Editions. 
+                            Interactive 3D isometric skin inspection in account settings.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon-box">
+                            <img src="assets/icons/redstone.png" alt="">
+                        </div>
+                        <h3 class="feature-title mc-shadow-gold">Instant Zero Freeze Loading</h3>
+                        <p class="feature-desc">
+                            Decoupled multithreaded content engine. Modpack manifests, ZIP archives, and resource pack icons 
+                            load asynchronously on background threads with 0ms UI freezing.
+                        </p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-icon-box">
+                            <img src="assets/icons/chest.png" alt="">
+                        </div>
+                        <h3 class="feature-title mc-shadow-diamond">Dual Channel In App Updater</h3>
+                        <p class="feature-desc">
+                            Check for updates, inspect release notes, and install new versions directly in Settings. 
+                            Switch seamlessly between Stable and Development update channels.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Secondary Showcase: Modpack Discover -->
+        <section class="section" style="padding-top: 10px;">
+            <div class="container">
+                <div class="hero-screenshot-frame">
+                    <img src="assets/images/discover.png" alt="Shulk Modpack Discovery Screen" class="hero-screenshot-img">
+                    <span class="preview-tag font-pixel">Modpack Discovery • Modrinth, CurseForge, FTB & Technic</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Downloads Grid Section -->
+        <section id="downloads" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag font-pixel">All Downloads</span>
+                    <h2 class="section-title mc-shadow">Choose Your Platform</h2>
+                    <p class="section-desc">Direct downloads powered by official GitHub releases with self contained dependencies.</p>
+                </div>
+
+                <div class="downloads-grid">
+                    <!-- Steam Deck / SteamOS / Bazzite -->
+                    <div id="card-steamos" class="download-card">
+                        <div class="card-top">
+                            <div class="card-platform-badge">
+                                <span class="platform-chip font-pixel">RECOMMENDED FOR HANDHELDS</span>
+                                <span class="version-pill js-version-tag">v1.1.2</span>
+                            </div>
+                            <h3 class="card-os-title mc-shadow-emerald">
+                                <img src="assets/icons/grass_block.png" alt="" class="btn-icon">
+                                Bazzite & SteamOS
+                            </h3>
+                            <p class="card-os-subtitle">Self Contained Installer for SteamOS, Bazzite and Linux Handhelds</p>
+                            
+                            <ul class="card-features-list">
+                                <li>Fully bundled runtime (800+ isolated libraries)</li>
+                                <li>One click <code>install.sh</code> and desktop icon setup</li>
+                                <li>Automatically adds Shulk to Steam Game Mode</li>
+                                <li>Zero missing dependency errors on immutable OS</li>
+                            </ul>
+                        </div>
+
+                        <div class="card-bottom">
+                            <div class="card-meta-row font-pixel">
+                                <span>Archive: .tar.gz</span>
+                                <span id="steamos-asset-size">~460 MB</span>
+                            </div>
+                            <a id="btn-download-steamos" href="https://github.com/NaiSenshin/Shulk/releases/download/v1.1.2/Shulk-1.1.2-SteamOS-Bazzite-Installer.tar.gz" class="btn btn-emerald js-download-trigger">
+                                <span>Download Installer</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Windows Handhelds & PC -->
+                    <div id="card-windows" class="download-card">
+                        <div class="card-top">
+                            <div class="card-platform-badge">
+                                <span class="platform-chip font-pixel">WINDOWS 10 / 11</span>
+                                <span class="version-pill js-version-tag">v1.1.2</span>
+                            </div>
+                            <h3 class="card-os-title mc-shadow-diamond">
+                                <img src="assets/icons/pickaxe.png" alt="" class="btn-icon">
+                                Windows Handhelds & PC
+                            </h3>
+                            <p class="card-os-subtitle">Portable package for ROG Ally, Legion Go, and Windows Desktop</p>
+                            
+                            <ul class="card-features-list">
+                                <li>Portable ZIP archive to extract anywhere and launch</li>
+                                <li>Automatic XInput and Xbox Controller detection</li>
+                                <li>Includes bundled 64 bit C++ runtime dependencies</li>
+                                <li>Armoury Crate and Legion Space launcher compatible</li>
+                            </ul>
+                        </div>
+
+                        <div class="card-bottom">
+                            <div class="card-meta-row font-pixel">
+                                <span>Package: .zip</span>
+                                <span id="windows-asset-size">~206 MB</span>
+                            </div>
+                            <a id="btn-download-windows" href="https://github.com/NaiSenshin/Shulk/releases/download/v1.1.2/Shulk-1.1.2-Windows-x64.zip" class="btn btn-stone js-download-trigger">
+                                <span>Download Windows (x64)</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Generic Linux Portable -->
+                    <div id="card-linux" class="download-card">
+                        <div class="card-top">
+                            <div class="card-platform-badge">
+                                <span class="platform-chip font-pixel">DESKTOP LINUX</span>
+                                <span class="version-pill js-version-tag">v1.1.2</span>
+                            </div>
+                            <h3 class="card-os-title mc-shadow-gold">
+                                <img src="assets/icons/compass.png" alt="" class="btn-icon">
+                                Linux Portable (x86_64)
+                            </h3>
+                            <p class="card-os-subtitle">Generic binary archive for Ubuntu, Fedora, Arch & openSUSE</p>
+                            
+                            <ul class="card-features-list">
+                                <li>Lightweight portable distribution archive</li>
+                                <li>Compatible with custom system Qt 6 and SDL2</li>
+                                <li>Ideal for desktop workstations and custom distros</li>
+                                <li>Fast uncompressed execution</li>
+                            </ul>
+                        </div>
+
+                        <div class="card-bottom">
+                            <div class="card-meta-row font-pixel">
+                                <span>Archive: .tar.gz</span>
+                                <span id="linux-asset-size">~186 MB</span>
+                            </div>
+                            <a id="btn-download-linux" href="https://github.com/NaiSenshin/Shulk/releases/download/v1.1.2/Shulk-1.1.2-Linux-x86_64.tar.gz" class="btn btn-stone js-download-trigger">
+                                <span>Download Linux Portable</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GitHub Source Card -->
+                <div class="download-card" style="margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                        <div>
+                            <h4 class="mc-shadow" style="font-size: 18px; margin-bottom: 4px;">GitHub Source Code & Release Archive</h4>
+                            <p style="font-size: 14px; color: var(--text-secondary);">Looking for older releases, changelogs, build instructions, or development previews?</p>
+                        </div>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <a href="https://github.com/NaiSenshin/Shulk/releases" target="_blank" rel="noopener" class="btn btn-ghost font-pixel">
+                                <span>All Releases ↗</span>
+                            </a>
+                            <a href="https://github.com/NaiSenshin/Shulk" target="_blank" rel="noopener" class="btn btn-stone font-pixel">
+                                <span>GitHub Repository ↗</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Start / Installation Guide -->
+        <section id="guide" class="section">
+            <div class="container">
+                <div class="section-header">
+                    <span class="section-tag font-pixel">Setup Guide</span>
+                    <h2 class="section-title mc-shadow">Quick Installation</h2>
+                    <p class="section-desc">Get Shulk up and running on your device in under 60 seconds.</p>
+                </div>
+
+                <div class="guide-tabs">
+                    <button class="guide-tab-btn font-pixel active" data-tab="steamos">
+                        <img src="assets/icons/grass_block.png" alt="" class="btn-icon">
+                        Bazzite & SteamOS
+                    </button>
+                    <button class="guide-tab-btn font-pixel" data-tab="windows">
+                        <img src="assets/icons/pickaxe.png" alt="" class="btn-icon">
+                        Windows Handhelds
+                    </button>
+                    <button class="guide-tab-btn font-pixel" data-tab="linux">
+                        <img src="assets/icons/compass.png" alt="" class="btn-icon">
+                        Generic Linux
+                    </button>
+                </div>
+
+                <!-- Panel: SteamOS -->
+                <div id="panel-steamos" class="guide-panel active">
+                    <ul class="guide-steps">
+                        <li class="guide-step">
+                            <div class="step-num">1</div>
+                            <div class="step-content">
+                                <h4 class="mc-shadow-emerald">Switch to Desktop Mode & Download</h4>
+                                <p>On your Steam Deck, press the STEAM button, go to <strong>Power</strong>, and choose <strong>Switch to Desktop</strong>. Download the SteamOS Installer package.</p>
+                            </div>
+                        </li>
+                        <li class="guide-step">
+                            <div class="step-num">2</div>
+                            <div class="step-content">
+                                <h4 class="mc-shadow-emerald">Extract the Archive</h4>
+                                <p>Right click the downloaded installer archive in Dolphin and select <strong>Extract Archive Here</strong>.</p>
+                            </div>
+                        </li>
+                        <li class="guide-step">
+                            <div class="step-num">3</div>
+                            <div class="step-content">
+                                <h4 class="mc-shadow-emerald">Run the Installer</h4>
+                                <p>Double click <code>Install Shulk.desktop</code> (or run <code>./install.sh</code> in terminal). The installer sets up desktop shortcuts and automatically registers Shulk into your Steam library.</p>
+                                <div class="code-block">tar -xzf Shulk-*-SteamOS-Bazzite-Installer.tar.gz && cd Shulk-Installer && ./install.sh</div>
+                            </div>
+                        </li>
+                        <li class="guide-step">
+                            <div class="step-num">4</div>
+                            <div class="step-content">
+                                <h4 class="mc-shadow-emerald">Return to Game Mode and Play!</h4>
+                                <p>Double click <strong>Return to Gaming Mode</strong> on your desktop. Launch Shulk directly from your Non Steam Games category with full controller navigation!</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Panel: Windows -->
+                <div id="panel-windows" class="guide-panel">
+                    <ul class="guide-steps">
+                        <li class="guide-step">
+                            <div class="step-num">1</div>
+                            <div class="step-content">
+                                <h4 class="mc-shadow-diamond">Download the Windows ZIP</h4>
+                                <p>Download the Windows package using the download button above.</p>
+                            </div>
+                        </li>
+                        <li class="guide-step">
+                            <div class="step-num">2</div>
+                            <div class="step-content">
+                                <h4 class="mc-shadow-diamond">Extract to Desired Folder</h4>
+                                <p>Extract the ZIP contents into your games directory (for example, <code>C:\Games\Shulk\</code>).</p>
+                            </div>
+                        </li>
+                        <li class="guide-step">
+                            <div class="step-num">3</div>
+                            <div class="step-content">
+                                <h4 class="mc-shadow-diamond">Launch shulk.exe</h4>
+                                <p>Double click <code>shulk.exe</code>. You can also add it to Steam, Armoury Crate, or Legion Space for one click launcher integration.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Panel: Linux -->
+                <div id="panel-linux" class="guide-panel">
+                    <ul class="guide-steps">
+                        <li class="guide-step">
+                            <div class="step-num">1</div>
+                            <div class="step-content">
+                                <h4 class="mc-shadow-gold">Extract the Archive</h4>
+                                <p>Extract the generic portable Linux tarball in your home or application directory:</p>
+                                <div class="code-block">tar -xzf Shulk-*-Linux-x86_64.tar.gz && cd Shulk</div>
+                            </div>
+                        </li>
+                        <li class="guide-step">
+                            <div class="step-num">2</div>
+                            <div class="step-content">
+                                <h4 class="mc-shadow-gold">Run the Launcher</h4>
+                                <p>Execute the native launcher binary:</p>
+                                <div class="code-block">./shulk</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3 class="mc-shadow">SHULK LAUNCHER</h3>
+                    <p style="margin-bottom: 12px; line-height: 1.6;">
+                        A free open source handheld first Minecraft Java Edition launcher built on Qt 6 / QML and Prism Launcher's mature C++ core.
+                    </p>
+                    <p style="font-size: 12px; color: var(--text-muted);">
+                        Licensed under the GNU General Public License v3.0 (GPLv3).
+                    </p>
+                </div>
+
+                <div class="footer-links font-pixel">
+                    <div class="footer-col">
+                        <h4>Navigation</h4>
+                        <ul>
+                            <li><a href="#features">Features</a></li>
+                            <li><a href="#downloads">Downloads</a></li>
+                            <li><a href="#guide">Installation</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Source & Heritage</h4>
+                        <ul>
+                            <li><a href="https://github.com/NaiSenshin/Shulk" target="_blank" rel="noopener">GitHub Project</a></li>
+                            <li><a href="https://github.com/NaiSenshin/Shulk/releases" target="_blank" rel="noopener">Release Archive</a></li>
+                            <li><a href="https://github.com/PrismLauncher/PrismLauncher" target="_blank" rel="noopener">Prism Launcher</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div>
+                    Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft. Minecraft is a trademark of Mojang Synergies AB.
+                </div>
+                <div>
+                    Built with ♥ for the handheld gaming community.
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container"></div>
+
+    <script src="main.js"></script>
+</body>
+</html>

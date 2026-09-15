@@ -1476,9 +1476,7 @@ FocusScope {
             root.platformIndex = (root.platformIndex + 1) % root.platforms.length
             if (typeof shulkSound !== "undefined") shulkSound.playFocus()
         } else if (action === 8 || action === 10) { // ActionSecondary / ActionSearch (Y)
-            root.activeSection = 0
-            searchInput.forceActiveFocus()
-            if (typeof shulkSound !== "undefined") shulkSound.playClick()
+            root.triggerSearchFocus()
         } else if (action === 15) { // ActionTriggerLeft (LT / L2 / Q)
             if (root.platformIndex > 0) {
                 root.platformIndex--
@@ -1489,6 +1487,16 @@ FocusScope {
                 root.platformIndex++
                 if (typeof shulkSound !== "undefined") shulkSound.playFocus()
             }
+        }
+    }
+
+    function triggerSearchFocus() {
+        if (typeof shulkSound !== "undefined") shulkSound.playClick()
+        root.activeSection = 0
+        searchInput.forceActiveFocus()
+        searchInput.selectAll()
+        if (typeof shulkInput !== "undefined") {
+            shulkInput.openVirtualKeyboard()
         }
     }
 

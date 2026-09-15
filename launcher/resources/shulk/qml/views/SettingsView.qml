@@ -20,7 +20,8 @@ FocusScope {
 
     // Panorama Dropdown state
     property bool panoramaDropdownOpen: false
-    property int panoramaDropdownIndex: 0
+    // Dev update channel visibility (false for public releases; true when uploading to dev)
+    readonly property bool showDevChannel: false
 
     Component.onCompleted: {
         shulkLauncher.checkForUpdates(false)
@@ -161,8 +162,10 @@ FocusScope {
             id: "about",
             name: qsTr("About Shulk"),
             iconSource: "qrc:/shulk/icons/shulk.png",
-            badge: "v1.1.1",
-            tagline: qsTr("Application version, dual-channel updates, credits, and system info"),
+            badge: "v" + (typeof shulkLauncher !== "undefined" ? shulkLauncher.appVersion : "1.1.2"),
+            tagline: root.showDevChannel
+                ? qsTr("Application version, dual-channel updates, credits, and system info")
+                : qsTr("Application version, software updates, credits, and system info"),
             disabled: false
         }
     ]
@@ -2120,6 +2123,7 @@ FocusScope {
                             spacing: Theme.space10
 
                             ShulkButton {
+                                visible: root.showDevChannel
                                 Layout.preferredWidth: 160 * Theme.scale
                                 text: qsTr("Channel: Stable")
                                 variant: shulkLauncher.updateChannel === "stable" ? "play" : "secondary"
@@ -2129,6 +2133,7 @@ FocusScope {
                             }
 
                             ShulkButton {
+                                visible: root.showDevChannel
                                 Layout.preferredWidth: 175 * Theme.scale
                                 text: qsTr("Channel: Dev (Private)")
                                 variant: shulkLauncher.updateChannel === "development" ? "play" : "secondary"
@@ -2141,10 +2146,10 @@ FocusScope {
                                 Layout.fillWidth: true
                                 text: shulkLauncher.isCheckingForUpdates ? qsTr("Checking...") : qsTr("Check for Updates")
                                 variant: "primary"
-                                isFocused: root.focusPane === 1 && root.itemRow === 0 && root.itemCol === 2
+                                isFocused: root.focusPane === 1 && root.itemRow === 0 && (root.showDevChannel ? root.itemCol === 2 : root.itemCol === 0)
                                 enabled: !shulkLauncher.isCheckingForUpdates
                                 implicitHeight: 38 * Theme.scale
-                                onClicked: { root.itemRow = 0; root.itemCol = 2; root.triggerAction(); }
+                                onClicked: { root.itemRow = 0; root.itemCol = root.showDevChannel ? 2 : 0; root.triggerAction(); }
                             }
                         }
 
@@ -2450,7 +2455,7 @@ FocusScope {
             }
             return 1
         } else if (root.activeCategory === 5) {
-            if (row === 0) return 3 // Stable, Dev, Check for Updates
+            if (row === 0) return root.showDevChannel ? 3 : 1 // (Stable, Dev), Check for Updates
             var hasUpdate1 = shulkLauncher.updateAvailable || shulkLauncher.isDownloadingUpdate || shulkLauncher.updateDownloaded
             if (hasUpdate1) {
                 if (row === 1) {
@@ -2593,11 +2598,15 @@ FocusScope {
             var licRow = hasUpdate2 ? 3 : 2
 
             if (root.itemRow === 0) {
-                if (root.itemCol === 0) {
-                    shulkLauncher.updateChannel = "stable"
-                } else if (root.itemCol === 1) {
-                    shulkLauncher.updateChannel = "development"
-                } else if (root.itemCol === 2) {
+                if (root.showDevChannel) {
+                    if (root.itemCol === 0) {
+                        shulkLauncher.updateChannel = "stable"
+                    } else if (root.itemCol === 1) {
+                        shulkLauncher.updateChannel = "development"
+                    } else if (root.itemCol === 2) {
+                        shulkLauncher.checkForUpdates(true)
+                    }
+                } else {
                     shulkLauncher.checkForUpdates(true)
                 }
             } else if (hasUpdate2 && root.itemRow === 1) {

@@ -1,0 +1,963 @@
+/* ==========================================================================
+   Shulk - Handheld Minecraft Java Launcher Official Website Stylesheet
+   Designed with exact visual parity to Shulk's Qt Quick / QML design system
+   ========================================================================== */
+
+/* --- Custom Minecraft Fonts --- */
+@font-face {
+    font-family: 'Mojangles';
+    src: url('assets/fonts/Mojangles.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Minecraft';
+    src: url('assets/fonts/Minecraft.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* --- Theme Design Tokens (matches Theme.qml) --- */
+:root {
+    --bg-deep: #0C0D0E;
+    --bg-surface: #171819;
+    --bg-surface-raised: #202122;
+    --bg-surface-hover: #292B2C;
+    --bg-surface-focused: #303332;
+    --bg-overlay: rgba(12, 13, 14, 0.88);
+    --bg-card: #1B1C1D;
+    --bg-card-hover: #242628;
+
+    /* Minecraft Materials & Accents */
+    --mc-emerald: #3C8527;
+    --mc-emerald-hover: #52A535;
+    --mc-emerald-dark: #2A641C;
+    --mc-diamond: #55FFFF;
+    --mc-gold: #FFAA00;
+    --mc-redstone: #FF5555;
+    --mc-deepslate: #16181B;
+    --mc-stone: #4F5052;
+    --mc-stone-light: #8F9094;
+    --mc-stone-dark: #2A2A2C;
+
+    /* Text Palette */
+    --text-primary: #FFFFFF;
+    --text-secondary: #C4C5C6;
+    --text-muted: #8B8D8E;
+    --text-highlight: #FFFFAA;
+
+    /* Borders */
+    --border-subtle: #313335;
+    --border-strong: #4F5052;
+    --border-focused: #FFFFFF;
+    --border-diamond: #55FFFF;
+
+    /* Shadows */
+    --shadow-text: 2px 2px 0px #3F3F3F;
+    --shadow-gold: 2px 2px 0px #3F2A00;
+    --shadow-diamond: 2px 2px 0px #153F3F;
+    --shadow-emerald: 2px 2px 0px #0F2109;
+    --shadow-redstone: 2px 2px 0px #3F1515;
+
+    /* Fonts */
+    --font-pixel: 'Mojangles', 'Minecraft', monospace;
+    --font-body: 'Mojangles', 'Minecraft', monospace;
+
+    /* Spacing & Radii */
+    --radius-sm: 3px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-pill: 999px;
+}
+
+/* --- Global Reset & Base --- */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Mojangles', 'Minecraft', monospace;
+}
+
+html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Mojangles', 'Minecraft', monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    letter-spacing: 0.5px;
+    -webkit-font-smoothing: antialiased;
+}
+
+body {
+    background-color: #101112;
+    background-image: 
+        radial-gradient(circle at 50% 20%, rgba(10, 11, 12, 0.52) 0%, rgba(10, 11, 12, 0.86) 75%, rgba(10, 11, 12, 0.96) 100%),
+        url('assets/images/stone.png');
+    background-repeat: repeat;
+    background-size: auto, 64px 64px;
+    background-attachment: fixed;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* --- Minecraft Drop Shadow Typography (matches Shulk launcher QML Theme) --- */
+/* Authentic 25% RGB quarter-brightness integer shadow calculation */
+h1, h2, h3, h4, h5, h6,
+p, span, a, button, li, label, small, code, th, td {
+    text-shadow: 2px 2px 0px #3F3F3F;
+}
+
+/* Secondary & body text with 25% shadow */
+p, .hero-subtitle, .section-desc, .feature-desc, .card-features-list li, .step-content p, .nav-link, .footer-col a {
+    text-shadow: 2px 2px 0px #2A2B2C;
+}
+
+.download-meta-info, .card-os-subtitle, .card-meta-row, .footer, .footer-bottom, .platform-chip, .preview-tag {
+    text-shadow: 1px 1px 0px #1E1F20;
+}
+
+.code-block {
+    color: #85E86E;
+    text-shadow: 1px 1px 0px #153F15;
+}
+
+.font-pixel {
+    font-family: var(--font-pixel);
+    letter-spacing: 0.5px;
+}
+
+.mc-shadow {
+    font-family: var(--font-pixel);
+    text-shadow: 2px 2px 0px #3F3F3F;
+}
+
+.mc-shadow-gold, .text-gold {
+    font-family: var(--font-pixel);
+    color: var(--mc-gold) !important;
+    text-shadow: 2px 2px 0px #3F2A00 !important;
+}
+
+.mc-shadow-diamond, .text-diamond, .os-detected-tag, .version-pill, .download-other-link {
+    font-family: var(--font-pixel);
+    color: var(--mc-diamond) !important;
+    text-shadow: 2px 2px 0px #153F3F !important;
+}
+
+.mc-shadow-emerald, .text-emerald {
+    font-family: var(--font-pixel);
+    color: #85E86E !important;
+    text-shadow: 2px 2px 0px #1B4512 !important;
+}
+
+/* --- Container & Layout --- */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* --- Top Navigation Bar --- */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: #241B15;
+    background-image: 
+        linear-gradient(180deg, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.45) 100%),
+        url('assets/images/grass_block_side.png'),
+        url('assets/images/dirt.png');
+    background-repeat: repeat, repeat-x, repeat;
+    background-size: auto, 64px 64px, 64px 64px;
+    background-position: top left, top left, top left;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border-bottom: 3px solid #140E0A;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    padding: 12px 0;
+}
+
+.navbar .nav-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+.logo-img {
+    width: 38px;
+    height: 38px;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6));
+    transition: transform 0.2s ease;
+}
+
+.logo-link:hover .logo-img {
+    transform: scale(1.08) rotate(-4deg);
+}
+
+.logo-text-wrap {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo-title {
+    font-size: 22px;
+    line-height: 1.1;
+}
+
+.version-pill {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--mc-diamond);
+    background: rgba(85, 255, 255, 0.12);
+    border: 1px solid rgba(85, 255, 255, 0.3);
+    padding: 1px 6px;
+    border-radius: var(--radius-pill);
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    list-style: none;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 14px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+}
+
+.nav-link:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Sound Effect Button */
+.sound-toggle-btn {
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.sound-toggle-btn:hover {
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+    background: var(--bg-surface-hover);
+}
+
+.sound-toggle-btn.muted {
+    opacity: 0.65;
+    filter: grayscale(1);
+}
+
+/* --- Tactile Minecraft 3D Buttons --- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-pixel);
+    font-size: 15px;
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.6);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 3px 6px rgba(0,0,0,0.4);
+    transition: transform 0.08s ease, background-color 0.12s ease, border-color 0.12s ease;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.btn:active {
+    transform: translateY(2px) scale(0.985);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Emerald Play Button (CTA) */
+.btn-emerald {
+    background-color: var(--mc-emerald);
+    color: var(--text-primary);
+    text-shadow: 2px 2px 0px var(--shadow-emerald);
+    border-top: 2px solid #5BA741;
+    border-bottom: 2px solid #204C14;
+}
+
+.btn-emerald:hover {
+    background-color: var(--mc-emerald-hover);
+    color: var(--text-highlight);
+    border-color: #FFFFFF;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 14px rgba(82, 165, 53, 0.55);
+}
+
+/* Stone Button */
+.btn-stone {
+    background-color: #2D2F30;
+    color: var(--text-primary);
+    text-shadow: 2px 2px 0px #18191A;
+    border-top: 1px solid #484A4D;
+    border-bottom: 2px solid #191A1B;
+}
+
+.btn-stone:hover {
+    background-color: #3C3E40;
+    border-color: #FFFFFF;
+    color: var(--text-highlight);
+}
+
+/* Ghost Button */
+.btn-ghost {
+    background-color: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    text-shadow: 1px 1px 0px #101010;
+}
+
+.btn-ghost:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--text-primary);
+    color: var(--text-primary);
+}
+
+/* Large Hero CTA Button */
+.btn-hero {
+    padding: 16px 36px;
+    font-size: 18px;
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+.btn-icon {
+    width: 20px;
+    height: 20px;
+    image-rendering: pixelated;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Controller Action Hint Pill */
+.btn-hint {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+    padding: 2px 6px;
+    font-size: 11px;
+    border-radius: var(--radius-sm);
+    text-shadow: 1px 1px 0 #000;
+}
+
+/* --- Hero Section --- */
+.hero {
+    padding: 70px 0 60px;
+    text-align: center;
+    position: relative;
+}
+
+.hero-badge-wrap {
+    margin-bottom: 20px;
+}
+
+.handheld-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(27, 28, 29, 0.9);
+    border: 1px solid var(--border-strong);
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.handheld-pill img {
+    width: 16px;
+    height: 16px;
+    image-rendering: pixelated;
+}
+
+.hero-title {
+    font-size: 48px;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.hero-subtitle {
+    font-size: 20px;
+    color: var(--text-secondary);
+    max-width: 760px;
+    margin: 0 auto 36px;
+    font-weight: 400;
+}
+
+/* Hero Download Box */
+.hero-download-box {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    background: rgba(23, 24, 25, 0.92);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    padding: 24px 32px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+    margin-bottom: 40px;
+}
+
+.download-os-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.os-detected-tag {
+    color: var(--mc-diamond);
+    font-weight: 600;
+}
+
+.download-meta-info {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 14px;
+}
+
+.download-other-link {
+    color: var(--mc-diamond);
+    text-decoration: none;
+    font-size: 13px;
+    margin-top: 4px;
+    border-bottom: 1px dashed rgba(85, 255, 255, 0.4);
+    transition: all 0.15s ease;
+}
+
+.download-other-link:hover {
+    color: #FFFFFF;
+    border-bottom-color: #FFFFFF;
+}
+
+/* Hero Preview Device Showcase */
+.hero-preview {
+    margin-top: 20px;
+    position: relative;
+}
+
+.hero-screenshot-frame {
+    position: relative;
+    max-width: 1020px;
+    margin: 0 auto;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: #111;
+    border: 2px solid #3F4144;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.hero-screenshot-frame:hover {
+    border-color: var(--mc-diamond);
+    transform: translateY(-4px);
+}
+
+.hero-screenshot-img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.preview-tag {
+    position: absolute;
+    bottom: 14px;
+    right: 14px;
+    background: rgba(12, 13, 14, 0.85);
+    border: 1px solid var(--border-subtle);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* --- Section Headers --- */
+.section {
+    padding: 60px 0;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.section-tag {
+    font-size: 12px;
+    color: var(--mc-diamond);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.section-title {
+    font-size: 32px;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.section-desc {
+    font-size: 16px;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* --- Downloads Grid Section --- */
+.downloads-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.download-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.download-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--border-strong);
+    transition: background-color 0.2s ease;
+}
+
+.download-card.highlighted {
+    border-color: var(--mc-diamond);
+    box-shadow: 0 8px 24px rgba(85, 255, 255, 0.15);
+}
+
+.download-card.highlighted::before {
+    background: var(--mc-diamond);
+}
+
+.download-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-strong);
+    background: var(--bg-card-hover);
+}
+
+.download-card.highlighted:hover {
+    border-color: var(--mc-diamond);
+}
+
+.card-top {
+    margin-bottom: 20px;
+}
+
+.card-platform-badge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.platform-chip {
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+}
+
+.card-os-title {
+    font-size: 22px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-os-subtitle {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+}
+
+.card-features-list {
+    list-style: none;
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card-features-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.card-features-list li::before {
+    content: '▪';
+    color: var(--mc-diamond);
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+.card-bottom {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.card-meta-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* --- Feature Highlights Grid --- */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.feature-card {
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    transition: all 0.2s ease;
+}
+
+.feature-card:hover {
+    border-color: var(--mc-diamond);
+    transform: translateY(-2px);
+    background: var(--bg-surface-hover);
+}
+
+.feature-icon-box {
+    width: 44px;
+    height: 44px;
+    background: var(--mc-deepslate);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: inset 1px 1px 0 rgba(0,0,0,0.5), inset -1px -1px 0 rgba(255,255,255,0.1);
+}
+
+.feature-icon-box img {
+    width: 26px;
+    height: 26px;
+    image-rendering: pixelated;
+}
+
+.feature-title {
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.feature-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* --- Installation Instructions Section --- */
+.guide-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.guide-tab-btn {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s ease;
+}
+
+.guide-tab-btn:hover {
+    background: var(--bg-surface-raised);
+    color: var(--text-primary);
+}
+
+.guide-tab-btn.active {
+    background: var(--bg-surface-raised);
+    border-color: var(--mc-diamond);
+    color: var(--text-primary);
+    box-shadow: 0 2px 8px rgba(85, 255, 255, 0.15);
+}
+
+.guide-panel {
+    display: none;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 32px;
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+.guide-panel.active {
+    display: block;
+}
+
+.guide-steps {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.guide-step {
+    display: flex;
+    gap: 16px;
+}
+
+.step-num {
+    width: 32px;
+    height: 32px;
+    background: var(--mc-emerald);
+    color: #fff;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-pixel);
+    font-size: 15px;
+    flex-shrink: 0;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.step-content h4 {
+    font-size: 16px;
+    margin-bottom: 6px;
+}
+
+.step-content p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.code-block {
+    background: #0D0E0F;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-family: 'Mojangles', 'Minecraft', monospace;
+    font-size: 13px;
+    color: #85E86E;
+    margin-top: 8px;
+    overflow-x: auto;
+}
+
+/* --- Footer --- */
+.footer {
+    background-color: #241B15;
+    background-image: 
+        linear-gradient(0deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.6) 100%),
+        url('assets/images/dirt.png');
+    background-repeat: repeat;
+    background-size: auto, 64px 64px;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border-top: 2px solid #140E0A;
+    box-shadow: inset 0 6px 16px rgba(0, 0, 0, 0.75);
+    padding: 40px 0 30px;
+    margin-top: 60px;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.footer-brand {
+    max-width: 440px;
+}
+
+.footer-brand h3 {
+    font-size: 18px;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.footer-links {
+    display: flex;
+    gap: 32px;
+}
+
+.footer-col h4 {
+    color: var(--text-primary);
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.footer-col ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.footer-col a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.footer-col a:hover {
+    color: var(--mc-diamond);
+}
+
+.footer-bottom {
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 12px;
+}
+
+/* --- Toast Notification for Audio / Downloads --- */
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.toast {
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--mc-diamond);
+    color: var(--text-primary);
+    padding: 12px 18px;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    animation: toastIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* --- Responsive Media Queries --- */
+@media (max-width: 860px) {
+    .hero-title {
+        font-size: 34px;
+    }
+    .hero-subtitle {
+        font-size: 17px;
+    }
+    .nav-links {
+        display: none;
+    }
+    .footer-content {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 540px) {
+    .hero {
+        padding: 40px 0 30px;
+    }
+    .hero-title {
+        font-size: 26px;
+    }
+    .hero-download-box {
+        padding: 18px;
+        width: 100%;
+    }
+    .btn-hero {
+        width: 100%;
+        padding: 14px 20px;
+        font-size: 16px;
+    }
+}

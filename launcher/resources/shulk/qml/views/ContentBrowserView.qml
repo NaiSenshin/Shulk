@@ -10,6 +10,8 @@ FocusScope {
     property var profile: null
     property string contentType: "mods"
     property var results: []
+    property int activeSection: 0 // 0 = Toolbar (Back, Search Field, Clear, Search Button), 1 = Results Grid
+    property int toolbarIndex: 1  // 0 = Back, 1 = Search Field, 2 = Clear (X) / Search Button, 3 = Search Button
     property int selectedIndex: 0
     property string errorMessage: ""
     property string installedMessage: ""
@@ -38,6 +40,17 @@ FocusScope {
                                     profile ? profile.loaderType : "")
     }
 
+    function triggerSearchFocus() {
+        if (typeof shulkSound !== "undefined") shulkSound.playClick()
+        root.activeSection = 0
+        root.toolbarIndex = 1
+        searchField.forceActiveFocus()
+        searchField.selectAll()
+        if (typeof shulkInput !== "undefined") {
+            shulkInput.openVirtualKeyboard()
+        }
+    }
+
     function installSelected() {
         if (!profile || selectedIndex < 0 || selectedIndex >= results.length || shulkCreation.isContentInstalling)
             return
@@ -50,28 +63,123 @@ FocusScope {
     }
 
     function handleAction(action) {
-        if (action === 1) {
-            if (selectedIndex >= gridColumns) selectedIndex -= gridColumns
-        } else if (action === 2) {
-            if (selectedIndex + gridColumns < results.length) selectedIndex += gridColumns
-        } else if (action === 3) {
-            if (selectedIndex > 0) selectedIndex--
-        } else if (action === 4) {
-            if (selectedIndex + 1 < results.length) selectedIndex++
-        } else if (action === 5) {
-            installSelected()
-        } else if (action === 6) {
-            backRequested()
-        } else if (action === 8) {
-            searchField.forceActiveFocus()
-            searchField.selectAll()
+        // (Y) - Direct Search Focus from anywhere
+        if (action === 8 || action === 10) {
+            triggerSearchFocus()
+            return
         }
-        if (results.length > 0 && selectedIndex >= 0)
-            resultsGrid.positionViewAtIndex(selectedIndex, GridView.Contain)
+
+        // SECTION 0: TOP TOOLBAR
+        if (root.activeSection === 0) {
+            var hasClearBtn = searchField.text.length > 0
+            var maxToolbar = hasClearBtn ? 3 : 2 // 0=Back, 1=Search, 2=(X if present else SearchBtn), 3=(SearchBtn if X)
+
+            if (action === 1) { // ActionNavigateUp
+                // Already at the top
+            } else if (action === 2) { // ActionNavigateDown -> Results Grid
+                if (searchField.activeFocus) {
+                    searchField.focus = false
+                }
+                if (root.results.length > 0) {
+                    root.activeSection = 1
+                    if (root.selectedIndex < 0) root.selectedIndex = 0
+                    if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+                }
+            } else if (action === 3) { // ActionNavigateLeft
+                if (root.toolbarIndex > 0) {
+                    root.toolbarIndex--
+                    if (root.toolbarIndex === 1) {
+                        searchField.forceActiveFocus()
+                    } else {
+                        searchField.focus = false
+                    }
+                    if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+                }
+            } else if (action === 4) { // ActionNavigateRight
+                if (root.toolbarIndex < maxToolbar) {
+                    root.toolbarIndex++
+                    if (root.toolbarIndex === 1) {
+                        searchField.forceActiveFocus()
+                    } else {
+                        searchField.focus = false
+                    }
+                    if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+                }
+            } else if (action === 5) { // ActionAccept (A)
+                var clearIdx = hasClearBtn ? 2 : -1
+                var searchBtnIdx = hasClearBtn ? 3 : 2
+
+                if (root.toolbarIndex === 0) {
+                    if (typeof shulkSound !== "undefined") shulkSound.playDismiss()
+                    root.backRequested()
+                } else if (root.toolbarIndex === 1) {
+                    triggerSearchFocus()
+                } else if (root.toolbarIndex === clearIdx) {
+                    if (typeof shulkSound !== "undefined") shulkSound.playClick()
+                    searchField.text = ""
+                    searchField.forceActiveFocus()
+                } else if (root.toolbarIndex === searchBtnIdx) {
+                    if (typeof shulkSound !== "undefined") shulkSound.playClick()
+                    searchField.focus = false
+                    root.runSearch()
+                    if (root.results.length > 0) {
+                        root.activeSection = 1
+                        root.selectedIndex = 0
+                    }
+                }
+            } else if (action === 6) { // ActionBack (B)
+                if (searchField.activeFocus) {
+                    searchField.focus = false
+                    if (root.results.length > 0) root.activeSection = 1
+                } else {
+                    if (typeof shulkSound !== "undefined") shulkSound.playDismiss()
+                    root.backRequested()
+                }
+            }
+            return
+        }
+
+        // SECTION 1: RESULTS GRID
+        if (action === 1) { // ActionNavigateUp
+            if (root.selectedIndex >= gridColumns) {
+                root.selectedIndex -= gridColumns
+                if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+            } else {
+                // Navigate into Top Search Bar!
+                root.activeSection = 0
+                root.toolbarIndex = 1
+                if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+            }
+        } else if (action === 2) { // ActionNavigateDown
+            if (root.selectedIndex + gridColumns < results.length) {
+                root.selectedIndex += gridColumns
+                if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+            }
+        } else if (action === 3) { // ActionNavigateLeft
+            if (root.selectedIndex > 0) {
+                root.selectedIndex--
+                if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+            }
+        } else if (action === 4) { // ActionNavigateRight
+            if (root.selectedIndex + 1 < results.length) {
+                root.selectedIndex++
+                if (typeof shulkSound !== "undefined") shulkSound.playFocus()
+            }
+        } else if (action === 5) { // ActionAccept (A)
+            installSelected()
+        } else if (action === 6) { // ActionBack (B)
+            if (typeof shulkSound !== "undefined") shulkSound.playDismiss()
+            root.backRequested()
+        }
+
+        if (results.length > 0 && root.selectedIndex >= 0)
+            resultsGrid.positionViewAtIndex(root.selectedIndex, GridView.Contain)
     }
 
     onVisibleChanged: {
         if (visible) {
+            root.activeSection = 0
+            root.toolbarIndex = 1
             searchField.text = ""
             results = []
             runSearch()
@@ -84,7 +192,12 @@ FocusScope {
         function onContentSearchFinished(type, foundResults) {
             if (type !== root.contentType) return
             root.results = foundResults
-            root.selectedIndex = foundResults.length > 0 ? 0 : -1
+            if (foundResults.length > 0) {
+                root.selectedIndex = 0
+                if (root.activeSection !== 0) root.activeSection = 1
+            } else {
+                root.selectedIndex = -1
+            }
         }
 
         function onContentSearchFailed(type, error) {
@@ -117,9 +230,14 @@ FocusScope {
             spacing: Theme.space12
 
             ShulkButton {
-                text: qsTr("Back")
+                text: qsTr("Back (B)")
                 variant: "secondary"
-                onClicked: root.backRequested()
+                isFocused: root.activeSection === 0 && root.toolbarIndex === 0
+                onClicked: {
+                    root.activeSection = 0
+                    root.toolbarIndex = 0
+                    root.backRequested()
+                }
             }
 
             Image {
@@ -161,36 +279,133 @@ FocusScope {
             }
         }
 
-        Rectangle {
+        // Minecraft-styled Search Bar
+        RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 52 * Theme.scale
-            radius: Theme.radiusMd
-            color: Theme.bgCard
-            border.color: searchField.activeFocus ? Theme.borderFocused : Theme.borderSubtle
-            border.width: searchField.activeFocus ? 2 : 1
+            spacing: Theme.space8
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: Theme.space8
-                spacing: Theme.space8
+            BorderImage {
+                id: searchBox
+                Layout.fillWidth: true
+                Layout.preferredHeight: 46 * Theme.scale
+                source: ((root.activeSection === 0 && root.toolbarIndex === 1) || searchField.activeFocus)
+                        ? "qrc:/shulk/assets/mc/gui/text_field_highlighted.png"
+                        : "qrc:/shulk/assets/mc/gui/text_field.png"
+                border { left: 4; top: 4; right: 4; bottom: 4 }
+                horizontalTileMode: BorderImage.Stretch
+                verticalTileMode: BorderImage.Stretch
+                smooth: false
 
-                TextField {
-                    id: searchField
-                    Layout.fillWidth: true
-                    placeholderText: qsTr("Search Modrinth for %1...").arg(root.pluralName.toLowerCase())
-                    font.family: Theme.fontFamily
-                    font.pixelSize: Theme.sizeBody
-                    color: Theme.textPrimary
-                    placeholderTextColor: Theme.textMuted
-                    selectionColor: Theme.accentPlay
-                    background: Item {}
-                    onAccepted: root.runSearch()
+                // Focus ring for controller
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: -2
+                    color: "transparent"
+                    border.color: Theme.mcDiamond
+                    border.width: 2
+                    radius: 2
+                    visible: (root.activeSection === 0 && root.toolbarIndex === 1)
                 }
 
-                ShulkButton {
-                    text: qsTr("Search")
-                    variant: "play"
-                    onClicked: root.runSearch()
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: Theme.space8
+                    spacing: Theme.space8
+
+                    Image {
+                        source: "qrc:/shulk/icons/spyglass.png"
+                        Layout.preferredWidth: 20 * Theme.scale
+                        Layout.preferredHeight: 20 * Theme.scale
+                        fillMode: Image.PreserveAspectFit
+                        smooth: false
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        Text {
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left
+                            text: qsTr("Search Modrinth for %1... (Press Y)").arg(root.pluralName.toLowerCase())
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeBody
+                            color: Theme.textMuted
+                            visible: searchField.text.length === 0 && !searchField.activeFocus
+                        }
+
+                        TextInput {
+                            id: searchField
+                            anchors.fill: parent
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.sizeBody
+                            color: Theme.textPrimary
+                            selectByMouse: true
+                            verticalAlignment: TextInput.AlignVCenter
+                            onAccepted: {
+                                searchField.focus = false
+                                root.runSearch()
+                                if (root.results.length > 0) {
+                                    root.activeSection = 1
+                                    root.selectedIndex = 0
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        visible: searchField.text.length > 0
+                        width: 22 * Theme.scale
+                        height: 22 * Theme.scale
+                        radius: 2
+                        color: (root.activeSection === 0 && root.toolbarIndex === 2) ? "#3A4560" : Theme.mcStoneDark
+                        border.color: (root.activeSection === 0 && root.toolbarIndex === 2) ? Theme.mcDiamond : "transparent"
+                        border.width: 1
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "X"
+                            font.family: Theme.fontDisplay
+                            font.pixelSize: 11 * Theme.scale
+                            font.bold: true
+                            color: Theme.textPrimary
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (typeof shulkSound !== "undefined") shulkSound.playClick()
+                                searchField.text = ""
+                                searchField.forceActiveFocus()
+                            }
+                        }
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    z: -1
+                    cursorShape: Qt.IBeamCursor
+                    onClicked: root.triggerSearchFocus()
+                }
+            }
+
+            ShulkButton {
+                id: searchBtn
+                text: qsTr("Search")
+                variant: "play"
+                implicitHeight: 46 * Theme.scale
+                isFocused: (root.activeSection === 0 && ((searchField.text.length > 0 && root.toolbarIndex === 3) || (searchField.text.length === 0 && root.toolbarIndex === 2)))
+                onClicked: {
+                    root.activeSection = 0
+                    root.toolbarIndex = (searchField.text.length > 0) ? 3 : 2
+                    searchField.focus = false
+                    root.runSearch()
+                    if (root.results.length > 0) {
+                        root.activeSection = 1
+                        root.selectedIndex = 0
+                    }
                 }
             }
         }
@@ -241,7 +456,7 @@ FocusScope {
                 title: root.errorMessage.length > 0 ? qsTr("Search Failed") : qsTr("No Results")
                 description: root.errorMessage.length > 0 ? root.errorMessage : qsTr("Try a different search for this Minecraft version.")
                 actionText: qsTr("Search Again")
-                onActionClicked: searchField.forceActiveFocus()
+                onActionClicked: root.triggerSearchFocus()
             }
 
             GridView {
@@ -263,8 +478,8 @@ FocusScope {
                         anchors.margins: Theme.space6
                         radius: Theme.radiusMd
                         color: cardMouse.containsMouse ? Theme.bgCardHover : Theme.bgCard
-                        border.width: (root.selectedIndex === index || cardMouse.containsMouse) ? 2 : 1
-                        border.color: (root.selectedIndex === index || cardMouse.containsMouse) ? Theme.borderFocused : Theme.borderSubtle
+                        border.width: ((root.activeSection === 1 && root.selectedIndex === index) || cardMouse.containsMouse) ? 2 : 1
+                        border.color: (root.activeSection === 1 && root.selectedIndex === index) ? Theme.mcDiamond : (cardMouse.containsMouse ? Theme.borderFocused : Theme.borderSubtle)
 
                         RowLayout {
                             z: 2
@@ -379,6 +594,7 @@ FocusScope {
                                     enabled: !shulkCreation.isContentInstalling
                                     implicitHeight: 32 * Theme.scale
                                     onClicked: {
+                                        root.activeSection = 1
                                         root.selectedIndex = index
                                         root.installSelected()
                                     }
@@ -391,8 +607,12 @@ FocusScope {
                             anchors.fill: parent
                             hoverEnabled: true
                             z: 1
-                            onClicked: root.selectedIndex = index
+                            onClicked: {
+                                root.activeSection = 1
+                                root.selectedIndex = index
+                            }
                             onDoubleClicked: {
+                                root.activeSection = 1
                                 root.selectedIndex = index
                                 root.installSelected()
                             }
@@ -403,3 +623,4 @@ FocusScope {
         }
     }
 }
+
