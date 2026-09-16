@@ -263,8 +263,16 @@ ApplicationWindow {
                     event.accepted = true
                 }
             } else if (event.key === Qt.Key_Y || event.key === Qt.Key_Slash) {
-                if (appWindow.activeNavTab === 1 && !appWindow.inDetailView) {
+                if (appWindow.inDetailView) {
+                    if (detailView.contentBrowserOpen) {
+                        detailView.contentBrowser.triggerSearchFocus()
+                        event.accepted = true
+                    }
+                } else if (appWindow.activeNavTab === 1) {
                     libraryView.triggerSearchFocus()
+                    event.accepted = true
+                } else if (appWindow.activeNavTab === 2) {
+                    discoverView.triggerSearchFocus()
                     event.accepted = true
                 }
             }

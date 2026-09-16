@@ -1,0 +1,10 @@
+website/
+docs/
+Antigravity.md
+build/
+build-*/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+.cache/

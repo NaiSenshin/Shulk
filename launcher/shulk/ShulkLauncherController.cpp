@@ -573,6 +573,12 @@ void ShulkLauncherController::setUpdateChannel(const QString& channel)
     }
 }
 
+bool ShulkLauncherController::isDevMode() const
+{
+    return qEnvironmentVariableIsSet("SHULK_DEV") ||
+           BuildConfig.printableVersionString().contains("-dev", Qt::CaseInsensitive);
+}
+
 void ShulkLauncherController::setDevToken(const QString& token)
 {
     if (m_devToken != token) {

@@ -38,6 +38,7 @@ FocusScope {
 
     // Instantiate Content Model for this profile
     property alias contentModel: contentModel
+    property alias contentBrowser: contentBrowser
 
     function deleteMod(index) {
         if (contentModel && contentModel.mods) {

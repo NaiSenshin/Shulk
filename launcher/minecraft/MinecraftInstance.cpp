@@ -522,6 +522,12 @@ QStringList MinecraftInstance::extraArguments()
     if (!jarMods.isEmpty()) {
         list.append({ "-Dfml.ignoreInvalidMinecraftCertificates=true", "-Dfml.ignorePatchDiscrepancies=true" });
     }
+    // Fix Forge / NeoForge processor hash verification on Linux distributions with zlib-ng (Bazzite, CachyOS, Fedora, Arch)
+    if (m_components->getComponent("net.minecraftforge") != nullptr ||
+        m_components->getComponent("net.neoforged") != nullptr ||
+        m_components->getComponent("net.neoforged.forge") != nullptr) {
+        list.append({ "-Dforgewrapper.skipHashCheck=true", "-Dforgewrapper.skipHashCheck=1" });
+    }
     auto addn = m_components->getProfile()->getAddnJvmArguments();
     if (!addn.isEmpty()) {
         QMap<QString, QString> tokenMapping = makeProfileVarMapping(m_components->getProfile());
@@ -707,6 +713,29 @@ QProcessEnvironment MinecraftInstance::createLaunchEnvironment()
     QProcessEnvironment env = createEnvironment();
 
 #ifdef Q_OS_LINUX
+    // Preload bundled vanilla libz.so.1 if present to ensure standard zlib compression for Java/Minecraft
+    {
+        QString appDir = APPLICATION->applicationDirPath();
+        QStringList searchPaths = {
+            FS::PathCombine(appDir, "shared/lib/libz.so.1"),
+            FS::PathCombine(appDir, "../shared/lib/libz.so.1"),
+            FS::PathCombine(appDir, "lib/libz.so.1"),
+            FS::PathCombine(APPLICATION->root(), "shared/lib/libz.so.1"),
+            FS::PathCombine(APPLICATION->root(), "lib/libz.so.1")
+        };
+        for (const auto& candidate : searchPaths) {
+            if (QFileInfo::exists(candidate)) {
+                QString currentPreload = env.value("LD_PRELOAD");
+                if (currentPreload.isEmpty()) {
+                    env.insert("LD_PRELOAD", candidate);
+                } else if (!currentPreload.contains("libz.so")) {
+                    env.insert("LD_PRELOAD", candidate + ":" + currentPreload);
+                }
+                break;
+            }
+        }
+    }
+
     if (settings()->get("EnableMangoHud").toBool() && APPLICATION->capabilities() & Application::SupportsMangoHud) {
         QStringList preloadList;
         if (auto value = env.value("LD_PRELOAD"); !value.isEmpty())
