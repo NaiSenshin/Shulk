@@ -20,8 +20,8 @@ FocusScope {
 
     // Panorama Dropdown state
     property bool panoramaDropdownOpen: false
-    // Dev update channel visibility (false for public releases; true when uploading to dev)
-    readonly property bool showDevChannel: false
+    // Dev update channel visibility (false for public releases; true when uploading to dev or in dev mode)
+    readonly property bool showDevChannel: (typeof shulkLauncher !== "undefined" && shulkLauncher.isDevMode) || false
 
     Component.onCompleted: {
         shulkLauncher.checkForUpdates(false)
